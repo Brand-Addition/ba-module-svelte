@@ -1,0 +1,58 @@
+{
+    "name": "brandaddition/module-svelte",
+    "description": "BA Svelte Module",
+    "type": "magento2-module",
+    "license": [
+      "EUPL-1.2"
+    ],
+    "require": {
+      "php": "~8.2||~8.3||~8.4",
+        "magento/module-backend": "^102.0",
+        "thecodingmachine/safe": "^1.3"
+    },
+    "require-dev": {
+      "phpstan/phpstan": "^1.10",
+      "bitexpert/phpstan-magento": "^0.30.1",
+      "phpstan/extension-installer": "^1.3",
+      "phpunit/phpunit": "^9",
+      "phpro/grumphp": "^2.0",
+      "phpunit/php-code-coverage": "^9.2"
+    },
+    "scripts": {
+        "test-coverage": [
+            "@putenv XDEBUG_MODE=coverage",
+            "phpunit --coverage-html tmp/report/"
+        ],
+        "test-unit": "phpunit --colors=always",
+        "test-stan": [
+            "phpstan analyse -c phpstan.neon",
+            "phpstan analyse -c phpstan.74.neon"
+        ],
+        "test": [
+            "@test-unit",
+            "@test-stan"
+        ]
+    },
+    "config": {
+      "allow-plugins": {
+            "magento/composer-dependency-version-audit-plugin": true,
+            "phpstan/extension-installer": true,
+            "magento/magento-composer-installer": false,
+            "phpro/grumphp": true
+        }
+    },
+    "autoload": {
+      "files": [
+        "registration.php"
+      ],
+      "psr-4": {
+        "BA\\Svelte\\": ""
+      }
+    },
+    "repositories": [
+      {
+        "type": "composer",
+        "url": "https://repo.magento.com/"
+      }
+    ]
+  }

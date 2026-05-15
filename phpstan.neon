@@ -1,0 +1,12 @@
+parameters:
+  level: 8
+  treatPhpDocTypesAsCertain: false
+  paths:
+    - %currentWorkingDirectory%
+  fileExtensions:
+    - php
+    - phtml
+  excludePaths:
+    - 'vendor/*'
+    - 'Test/*'
+    - 'tmp/*'

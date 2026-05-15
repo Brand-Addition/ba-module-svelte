@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * Copyright © Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd"
+         colors="true"
+         columns="max"
+         beStrictAboutTestsThatDoNotTestAnything="false"
+         bootstrap="Test/bootstrap.php">
+    <coverage>
+        <include>
+            <directory suffix=".php">*</directory>
+        </include>
+        <exclude>
+            <directory>tmp/*</directory>
+            <directory>vendor/*</directory>
+            <directory>Test/**/*</directory>
+            <file>vendor/autoload.php</file>
+            <file>Test/bootstrap.php</file>
+        </exclude>
+    </coverage>
+    <testsuites>
+        <testsuite name="module-tests">
+            <directory>Test/Unit/*</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <ini name="memory_limit" value="-1"/>
+        <ini name="date.timezone" value="Europe/London"/>
+        <ini name="xdebug.max_nesting_level" value="200"/>
+    </php>
+    <listeners>
+        <listener class="Magento\Framework\TestFramework\Unit\Listener\ReplaceObjectManager"/>
+    </listeners>
+</phpunit>

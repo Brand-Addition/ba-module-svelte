@@ -1,0 +1,20 @@
+grumphp:
+    tasks: 
+        # phpcs:
+        #     standard: 
+        #         - PSR12
+        #         - phpcs_ba_ruleset.xml
+        #     tab_width: 4
+        phpstan:
+            level: 8
+        phpunit:
+            always_execute: true
+        git_blacklist:
+            keywords:
+                - "die("
+                - "var_dump("
+                - "print_r("
+                - "exit;"
+                - "console.log"
+                - "_objectManager"
+                - "ObjectManagerInterface"
