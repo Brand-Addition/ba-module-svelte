@@ -30,12 +30,6 @@ jobs:
           php-version: ${{ matrix.php-version }}
           coverage: none
 
-      - name: Set up Composer auth
-        if: ${{ secrets.COMPOSER_AUTH != '' }}
-        run: |
-          mkdir -p "$HOME/.composer"
-          echo '${{ secrets.COMPOSER_AUTH }}' > "$HOME/.composer/auth.json"
-
       - name: Cache Composer dependencies
         uses: actions/cache@v4
         with:
