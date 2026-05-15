@@ -1,0 +1,13 @@
+{
+  "name": "ba-svelte",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^3.1.2",
+    "svelte": "^5.20.1",
+    "vite": "^5.4.10"
+  }
+}

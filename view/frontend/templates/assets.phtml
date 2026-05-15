@@ -1,0 +1,46 @@
+<?php
+/** @var \Magento\Framework\View\Element\Template $block */
+/** @var \Magento\Framework\Escaper $escaper */
+/** @var \Magento\Framework\View\Helper\SecureHtmlRenderer $secureRenderer */
+$entryStyleUrl = $block->getViewFileUrl('js/dist/svelte-app.css');
+$entryScriptUrl = $block->getViewFileUrl('js/dist/svelte-app.js');
+$assetBootstrapScript = <<<JS
+(function () {
+    var styleUrl = '{$escaper->escapeJs($entryStyleUrl)}';
+    var scriptUrl = '{$escaper->escapeJs($entryScriptUrl)}';
+
+    window.mageTranslate = window.mageTranslate || function (text) {
+        if (typeof text !== 'string' || text === '') {
+            return text;
+        }
+
+        if (window.mage && typeof window.mage.__ === 'function') {
+            return window.mage.__(text);
+        }
+
+        if (window.jQuery && window.jQuery.mage && typeof window.jQuery.mage.__ === 'function') {
+            return window.jQuery.mage.__(text);
+        }
+
+        return text;
+    };
+
+    if (!document.querySelector('link[data-ba-svelte-bundle="true"][href="' + styleUrl + '"]')) {
+        var style = document.createElement('link');
+        style.rel = 'stylesheet';
+        style.href = styleUrl;
+        style.setAttribute('data-ba-svelte-bundle', 'true');
+        document.head.appendChild(style);
+    }
+
+    if (!window.__baSvelteBundleRequested) {
+        var script = document.createElement('script');
+        script.type = 'module';
+        script.src = scriptUrl;
+        window.__baSvelteBundleRequested = true;
+        document.head.appendChild(script);
+    }
+}());
+JS;
+?>
+<?= /* @noEscape */ $secureRenderer->renderTag('script', [], $assetBootstrapScript, false) ?>

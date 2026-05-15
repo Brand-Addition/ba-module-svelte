@@ -1,0 +1,8 @@
+<?php
+/** @var \BA\Svelte\Block\SvelteBlock $block */
+/** @var \Magento\Framework\Escaper $escaper */
+?>
+<div
+    class="svelte-root"
+    data-config="<?= $escaper->escapeHtmlAttr($block->getComponentConfigJson()) ?>"
+></div>

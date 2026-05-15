@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Setup\Console\Command\DeployStaticContentCommand">
+        <plugin name="ba_svelte_build_after_deploy_command"
+                type="BA\Svelte\Plugin\BuildSveltePlugin"
+                sortOrder="10" />
+    </type>
+    <type name="Magento\Deploy\Service\DeployStaticContent">
+        <plugin name="ba_svelte_build_after_deploy_service"
+                type="BA\Svelte\Plugin\BuildSveltePlugin"
+                sortOrder="10" />
+    </type>
+    <type name="BA\Svelte\Model\PropResolverPool">
+        <arguments>
+            <argument name="resolvers" xsi:type="array">
+                <item name="asset" xsi:type="object">BA\Svelte\Model\PropResolver\AssetPropResolver</item>
+                <item name="translate" xsi:type="object">BA\Svelte\Model\PropResolver\TranslatePropResolver</item>
+                <item name="url" xsi:type="object">BA\Svelte\Model\PropResolver\UrlPropResolver</item>
+            </argument>
+        </arguments>
+    </type>
+</config>
