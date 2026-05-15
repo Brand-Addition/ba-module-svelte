@@ -1,46 +1,58 @@
 # BA_Svelte
 
-Shared Magento 2 Svelte runtime for root component mounts with Magento-native named containers.
+`BA_Svelte` is the shared Magento 2 Svelte platform for BA storefront modules.
 
-## Responsibilities
+## What You Build With It
 
-- `BA\Svelte\Block\SvelteBlock` serializes one root Svelte component into `component + props + containers`.
-- `BA\Svelte\Block\ComponentBlock` serializes nested Svelte components that live inside named Magento containers.
-- `view/frontend/templates/root.phtml` emits one `.svelte-root` mount node with the serialized component config.
-- `view/frontend/web/svelte-src` contains the shared Vite bootstrap plus the generic container/component renderers.
-- `view/frontend/web/js/lib/http.js` provides shared JSON request helpers for Svelte modules.
-- `BuildSveltePlugin` hooks into `setup:static-content:deploy` and compiles the merged SCD asset tree into `pub/static/.../js/dist`.
+In practice a BA storefront module built on `BA_Svelte` usually looks like this:
 
-## Architecture
+1. Layout XML declares a root `SvelteBlock`
+2. That root points at a `.svelte` component in your module
+3. XML arguments, a `view_model`, and `computed_props` become component props
+4. Optional view xml child blocks/containers become named Svelte slots
+5. The shared runtime mounts the root component on the page
+6. Your Svelte code imports shared BA platform helpers through `@modules`
 
-The root mount is intentionally simple:
+That keeps the authoring model simple:
 
-1. Magento layout declares a root `SvelteBlock` with a normal `svelte_component`
-2. The root block exposes named child containers with Magento `<container />`
-3. Nested `ComponentBlock` children inside those containers become container items
-4. The shared runtime mounts the root component directly
-5. The root component renders named containers through `ContainerRenderer`
+- normal Magento layout and blocks
+- normal Svelte components
+- no extra registry file
+- no second naming system
+- Magento-native `before`, `after`, `move`, and `remove` still work
 
-That keeps the developer workflow low-friction:
+## The Main Pieces
 
-- no extra registry file per root component
-- no second naming layer to keep in sync
-- normal Magento component paths stay the public API
+- `BA\Svelte\Block\SvelteBlock`
+  Root block for a page-level or section-level Svelte mount.
+- `BA\Svelte\Block\ComponentBlock`
+  Nested Svelte component block for named containers or default child rendering.
+- `BA\Svelte\Block\SvelteLink`
+  Root-style Svelte block for sorted Magento link collections such as `top.links`.
+- `view/frontend/templates/root.phtml`
+  Emits the `.svelte-root` wrapper, serialized config, and optional server fallback markup.
+- `view/frontend/web/svelte-src`
+  Shared Vite source used to build the runtime bundle against the deployed static-content tree.
+- `view/frontend/web/js/lib/state.js`
+  Public customer-section and store hydration facade.
+- `view/frontend/web/js/lib/events.js`
+  Public storefront event facade.
+- `view/frontend/web/js/lib/messages.js`
+  Public message and Magento fragment update facade.
+- `view/frontend/web/js/lib/forms.js`
+  Public validation and AJAX form facade.
+- `view/frontend/web/js/lib/commerce.js`
+  Public add-to-cart facade.
+- `view/frontend/web/js/lib/magento.js`
+  Public Magento URL and JSON request helper facade.
+- `view/frontend/web/js/lib/i18n.js`
+  Public translation helper.
+- `BuildSveltePlugin`
+  Hooks into `setup:static-content:deploy` and builds the merged storefront Svelte bundle in each deployed static-content root that contains `BA_Svelte`.
 
-## Why Named Containers Exist
+## Start A New Root Mount
 
-Without named containers, a root Svelte component can only receive one flat list of nested children. That makes layout extension possible, but it forces parent components to know child block names or child order. Named containers let Magento express semantic slots like `shipping`, `footer`, or `actions` directly in layout XML.
-
-That gives you:
-
-- stable Magento-native extension points
-- `before`, `after`, `move`, and `remove` support
-- clearer parent component contracts
-- no extra JS file per root mount
-
-## Layout Usage
-
-### Root Component
+The normal starting point is one root block in layout XML.
 
 ```xml
 <block class="BA\Svelte\Block\SvelteBlock"
@@ -62,38 +74,15 @@ That gives you:
 </block>
 ```
 
-### Nested Container Components
+`svelte_component` uses Magento template notation:
 
-```xml
-<referenceContainer name="example.root.container.actions">
-    <block class="BA\Svelte\Block\ComponentBlock"
-           name="example.root.primary_action">
-        <arguments>
-            <argument name="svelte_component" xsi:type="string">Vendor_Module::actions/primary-button.svelte</argument>
-            <argument name="label" xsi:type="string">Continue</argument>
-        </arguments>
-    </block>
-</referenceContainer>
-```
+- `Vendor_Module::example-root.svelte`
 
-`svelte_component` uses Magento template notation. `Vendor_Module::example-root.svelte` resolves to `view/frontend/web/svelte/example-root.svelte`.
+That resolves to:
 
-## Runtime Contract
+- `view/frontend/web/svelte/example-root.svelte`
 
-Every mounted Svelte component receives:
-
-- its normal props from XML arguments and `computed_props`
-- `containers`: the full named container map
-- `get_container(name)`: returns one named container as an array of component configs
-- `has_container(name)`: returns whether a container contains components
-- `default_container`: shorthand for the `default` container
-
-Nested component configs are rendered through:
-
-- `@modules/BA_Svelte/svelte/container-renderer.svelte`
-- `@modules/BA_Svelte/svelte/renderer.svelte`
-
-Example:
+The matching root component can then read normal props plus the container helpers:
 
 ```svelte
 <script>
@@ -111,29 +100,65 @@ Example:
 </section>
 ```
 
-### Reflected `view_model` Props
+## Add Magento-Native Extension Points
 
-You can also attach a standard Magento `view_model` object to a `SvelteBlock` or `ComponentBlock` in layout XML:
+Obviously, as its just view xml, a second module can extend the xml we added above:
 
 ```xml
-<argument name="view_model" xsi:type="object">Vendor\Module\ViewModel\Example</argument>
+<referenceContainer name="example.root.container.actions">
+    <block class="BA\Svelte\Block\ComponentBlock"
+           name="example.root.primary_action">
+        <arguments>
+            <argument name="svelte_component" xsi:type="string">Vendor_Module::actions/primary-button.svelte</argument>
+            <argument name="label" xsi:type="string">Continue</argument>
+        </arguments>
+    </block>
+</referenceContainer>
 ```
 
-`BA_Svelte` reflects that object using Magento's getter conventions, similar to web API output processing:
+Given the parent module uses `$state` in a seperate file imported using `@modules`, you can bring that in, and change the state from your added component.
 
-- `getCountryOptions()` becomes `country_options`
-- `isGuestCheckoutAllowed()` becomes `guest_checkout_allowed`
-- `hasShippingPolicy()` becomes `shipping_policy`
+Every mounted component receives:
 
-Only public zero-argument getter methods are included. In practice, that means:
+- normal props from XML arguments and `computed_props`
+- `containers`
+- `get_container(name)`
+- `has_container(name)`
+- `default_container`
 
-- use `get*`, `is*`, or `has*` methods
-- add native return types or docblocks Magento reflection can read
-- keep the view model intentionally simple and serialization-friendly
+Render nested configs through:
 
-Reflected `view_model` data is merged into component props before `computed_props`. Explicit XML props still win over reflected values with the same key.
+- `@modules/BA_Svelte/svelte/container-renderer.svelte`
+- `@modules/BA_Svelte/svelte/block-renderer.svelte`
+- `@modules/BA_Svelte/svelte/renderer.svelte`
 
-Quick example:
+If you need to render one child block directly and optionally override props inline:
+
+```svelte
+<script>
+    import BlockRenderer from '@modules/BA_Svelte/svelte/block-renderer.svelte';
+
+    let {
+        default_container: defaultContainer,
+    } = $props();
+</script>
+
+<BlockRenderer block={defaultContainer} value={row.value} />
+```
+
+You can also target a child by layout block name:
+
+```svelte
+<BlockRenderer block="price_renderer" blocks={defaultContainer} value={row.value} />
+```
+
+## Add A Static HTML Fallback
+
+Root mounts can optionally render server HTML first and then let the runtime progressively enhance it.
+
+To do that, add a normal Magento child block with alias `fallback` under the root `SvelteBlock`.
+
+Example:
 
 ```xml
 <block class="BA\Svelte\Block\SvelteBlock"
@@ -141,10 +166,73 @@ Quick example:
        template="BA_Svelte::root.phtml">
     <arguments>
         <argument name="svelte_component" xsi:type="string">Vendor_Module::example-root.svelte</argument>
-        <argument name="view_model" xsi:type="object">Vendor\Module\ViewModel\Example</argument>
     </arguments>
+
+    <block class="Magento\Framework\View\Element\Template"
+           name="example.root.fallback"
+           as="fallback"
+           template="Vendor_Module::example/fallback.phtml"/>
 </block>
 ```
+
+Behavior:
+
+- the fallback markup stays visible initially
+- BA_Svelte mounts the Svelte app into a hidden host inside the same root wrapper
+- after the first successful client render, the runtime removes the fallback and reveals the mounted app
+- if config parsing or mount fails, the fallback stays in place
+
+This is root-mount behavior only. It is not a Svelte hydration contract and it does not preserve DOM identity between server HTML and the client component.
+
+## Use A Svelte Mount In Sorted Link Collections
+
+If the component needs to participate in link collections that expect `SortLinkInterface`, use `BA\Svelte\Block\SvelteLink`.
+
+```xml
+<referenceBlock name="top.links">
+    <block class="BA\Svelte\Block\SvelteLink"
+           name="example.account.link"
+           after="my-account-link">
+        <arguments>
+            <argument name="sortOrder" xsi:type="number">60</argument>
+            <argument name="svelte_component" xsi:type="string">Vendor_Module::account-link.svelte</argument>
+            <argument name="view_model" xsi:type="object">Vendor\Module\ViewModel\AccountLink</argument>
+        </arguments>
+        <action method="setTemplate">
+            <argument name="template" xsi:type="string">Vendor_Module::link.phtml</argument>
+        </action>
+    </block>
+</referenceBlock>
+```
+
+Use this for:
+
+- `top.links`
+- customer account link groups
+- theme-specific link builders that sort children through Magento link APIs
+
+## Pass Data Into Components
+
+There are three normal ways to get data into a component:
+
+### 1. Plain XML Arguments
+
+Any non-reserved XML argument on a `SvelteBlock` or `ComponentBlock` is normalized into component props.
+
+```xml
+<argument name="heading" xsi:type="string">Example</argument>
+<argument name="show_summary" xsi:type="boolean">true</argument>
+```
+
+### 2. `view_model`
+
+You can attach a Magento `view_model` and let `BA_Svelte` reflect its getter methods into props.
+
+```xml
+<argument name="view_model" xsi:type="object">Vendor\Module\ViewModel\Example</argument>
+```
+
+Example view model:
 
 ```php
 <?php
@@ -166,164 +254,508 @@ class Example implements ArgumentInterface
 }
 ```
 
-```svelte
-<script>
-    let { message = '' } = $props();
-</script>
+That becomes:
 
-<p>{message}</p>
+- `message`
+
+Reflection rules:
+
+- `getCountryOptions()` becomes `country_options`
+- `isGuestCheckoutAllowed()` becomes `guest_checkout_allowed`
+- `hasShippingPolicy()` becomes `shipping_policy`
+
+Only public zero-argument getter methods are included. Reflected `view_model` props are merged before `computed_props`, and explicit XML props still win if keys collide.
+
+### 3. `computed_props`
+
+Use resolver-backed props for values that should be calculated at render time.
+
+Built-in resolvers:
+
+- `url`
+- `asset`
+- `translate`
+
+Example:
+
+```xml
+<argument name="computed_props" xsi:type="array">
+    <item name="endpointUrl" xsi:type="array">
+        <item name="resolver" xsi:type="string">url</item>
+        <item name="path" xsi:type="string">rest/V1/example</item>
+    </item>
+</argument>
 ```
 
-That renders `Hello from Magento` on the page.
+### Add a new `computed_props` using di pool
 
+If the built-in resolvers are not enough, add your own resolver class in your module and register it into `BA\Svelte\Model\PropResolverPool` through DI.
 
-## `@modules` Imports
+Example resolver:
 
-Svelte components in this setup often import shared code like:
+```php
+<?php
+declare(strict_types=1);
 
-- `@modules/BA_Svelte/svelte/container-renderer.svelte`
-- `@modules/BA_Svelte/js/lib/i18n.js`
-- `@modules/BA_SvelteCheckout/js/stores/checkoutStore.js`
+namespace Vendor\Module\Model\PropResolver;
 
-`@modules` is a Vite alias defined in `view/frontend/web/svelte-src/vite.config.js`. It points at the deployed Magento static-content root for the current storefront, not at `app/code` directly.
+use BA\Svelte\Api\PropResolverInterface;
+use Magento\Framework\View\Element\Template;
 
-That means an import like:
+class ExamplePropResolver implements PropResolverInterface
+{
+    public function resolve(string $propName, array $definition, Template $block): mixed
+    {
+        $value = $definition['value'] ?? null;
+
+        return is_string($value) ? strtoupper($value) : null;
+    }
+}
+```
+
+Register it in your module `etc/di.xml`:
+
+```xml
+<type name="BA\Svelte\Model\PropResolverPool">
+    <arguments>
+        <argument name="resolvers" xsi:type="array">
+            <item name="example" xsi:type="object">Vendor\Module\Model\PropResolver\ExamplePropResolver</item>
+        </argument>
+    </arguments>
+</type>
+```
+
+Then use it in layout XML:
+
+```xml
+<argument name="computed_props" xsi:type="array">
+    <item name="exampleValue" xsi:type="array">
+        <item name="resolver" xsi:type="string">example</item>
+        <item name="value" xsi:type="string">hello world</item>
+    </item>
+</argument>
+```
+
+Rules for custom resolvers:
+
+- implement `BA\Svelte\Api\PropResolverInterface`
+- return data that can be safely serialized into component props
+- read your resolver-specific config from the `$definition` array
+- use the provided Magento `$block` when you need store-aware URLs, assets, or request/render context
+
+## Inspect The Final Prop Contract
+
+If you want to see what a mounted block will actually receive, use the CLI helper:
+
+```bash
+bin/magento ba:svelte:props checkout_index_index checkout.root
+```
+
+The command loads `default` plus the handle you pass, resolves the named BA_Svelte block, and prints a typed Svelte 5 `$props()` snippet.
+
+Use `--store=<code>` when the layout or computed props depend on store scope.
+
+## Write Svelte Code Against `@modules`
+
+Svelte modules in this setup import shared code through the `@modules` Vite alias.
+
+Example:
+
+```js
+import ContainerRenderer from '@modules/BA_Svelte/svelte/container-renderer.svelte';
+import { _ } from '@modules/BA_Svelte/js/lib/i18n.js';
+import { buildRestUrl } from '@modules/BA_Svelte/js/lib/magento.js';
+```
+
+`@modules` points at the deployed static-content root for the current storefront, not at `app/code` directly.
+
+So:
 
 ```js
 import ContainerRenderer from '@modules/BA_Svelte/svelte/container-renderer.svelte';
 ```
 
-resolves against the static-content tree:
+resolves against:
 
 ```text
-pub/static/frontend/<Vendor>/<Theme>/<Locale>/BA_Svelte/svelte/container-renderer.svelte
+pub/static/<area>/<Vendor>/<Theme>/<Locale>/BA_Svelte/svelte/container-renderer.svelte
 ```
 
-and that file exists because Magento copied `BA_Svelte/view/frontend/web/...` into `pub/static/.../BA_Svelte/...` during static content deploy.
+Why this matters:
 
-### Why It Exists
+- imports stay short
+- one BA module can reuse public code from another BA module
+- the build runs against the same merged static asset tree Magento serves
 
-This alias gives Svelte code one stable import base across modules:
+Rules:
 
-- imports stay short and readable
-- modules can import shared helpers from other Magento modules
-- the build works against the same merged asset tree Magento actually serves
+- files under `svelte/` and documented `js/` entrypoints are fair to reuse
+- files under `svelte-src/` are build/runtime internals unless documented otherwise
 
-Without it, relative imports across modules would be brittle and tied to the temporary layout of the deployed static files.
+## The Public JS APIs You Should Actually Use
 
-### Is It Extensible
+Most feature modules should build on the public facades below and avoid `js/lib/runtime/*`, `http.js`, and `url.js` directly.
 
-Yes, within the Magento static asset model.
+Current stability note:
 
-Any module that publishes frontend assets into `view/frontend/web` becomes importable through `@modules/<Module_Name>/...` after static content deploy. In practice that means you can add:
+- `state.js`, `magento.js`, and `i18n.js` are already used internally and are the most proven `js/lib` surfaces today.
+- The other `js/lib` public facades below are still very alpha. Their API shape and behavior will change.
 
-- shared Svelte wrappers
-- shared JS stores
-- utility modules
-- leaf Svelte components intended for reuse
+### State
+
+```js
+import {
+    createCustomerSectionStore,
+    getCachedCustomerSection,
+    loadCustomerSection,
+    loadCustomerSections,
+    reloadCustomerSection,
+    reloadCustomerSections,
+    syncCustomerSectionsCache,
+} from '@modules/BA_Svelte/js/lib/state.js';
+```
+
+Use `state.js` for:
+
+- customer sections
+- cache-first reads from `mage-cache-storage`
+- forced reloads through `customer/section/load`
+- shared section store patterns
+
+Rules:
+
+- use `loadCustomerSection()` for normal hydration
+- use `reloadCustomerSection()` when you want cache bypass
+- use `createCustomerSectionStore()` when a feature wants one reusable store contract
+- if you update section payloads locally, persist them with `syncCustomerSectionsCache()`
+
+Migration shim that still exists:
+
+- `@modules/BA_Svelte/js/lib/customer-sections.js`
+
+This shim is also very alpha and can change.
+
+### Translation
+
+```js
+import { _ } from '@modules/BA_Svelte/js/lib/i18n.js';
+```
+
+This uses `window.mageTranslate()` when Magento provides it and falls back to the original string otherwise.
 
 Example:
 
-```js
-import { minicartStore } from '@modules/BA_SvelteMinicart/js/stores/minicartStore.js';
+```svelte
+<script>
+    import { _ } from '@modules/BA_Svelte/js/lib/i18n.js';
+
+    let { buttonLabel = 'Open size guide' } = $props();
+</script>
+
+<button type="button">
+    {_(buttonLabel)}
+</button>
 ```
 
-### Extension Boundary
+### Price Rendering
 
-`@modules` is only a path alias. It does not add a package system, versioning layer, or public/private API enforcement by itself.
+If a module needs standard price output, use the shared price component:
 
-So it is extensible in the sense that more modules can expose importable files, but those imports should still be treated as intentional API surface. A good rule is:
+```js
+import Price from '@modules/BA_Svelte/svelte/catalog/price.svelte';
+```
 
-- files under `svelte/` and `js/` that are documented in a module README are fair to reuse
-- files under `svelte-src/` are build/runtime internals unless explicitly documented otherwise
+This component handles:
 
-If you need stricter extensibility later, the next step would be documentation and conventions around which `@modules/<Module>/...` paths are public, not changing the alias itself.
+- normal final price rendering
+- special price plus old price output
+- locale-aware currency formatting
+- optional minimal price / `As low as` output
+- optional minimal-price links back to the product URL
 
-## Config Resolution
+Main props:
 
-Dynamic values come from resolver-backed config arrays.
+- `final_price`
+- `regular_price`
+- `has_special_price`
+- `currency_code`
+- `currency_symbol`
+- `locale`
+- `precision`
+- `show_minimal_price`
+- `use_link_for_as_low_as`
+- `minimal_price`
+- `minimal_price_label`
+- `product_url`
+- `special_price_label`
+- `old_price_label`
 
-Built-in resolvers:
+Example:
 
-- `url`: generates a frontend URL from `path`
-- `asset`: generates a static asset URL from `file`
-- `translate`: resolves a translated string from `text`
+```svelte
+<script>
+    import Price from '@modules/BA_Svelte/svelte/catalog/price.svelte';
+
+    let price = {
+        final_price: 79.99,
+        regular_price: 99.99,
+        has_special_price: true,
+        currency_code: 'GBP',
+        locale: 'en-GB',
+        special_price_label: 'Special Price',
+        old_price_label: 'Was',
+    };
+</script>
+
+<Price {...price} />
+```
+
+The component is for rendering only. Decide what the price data should be in Magento or in your owning feature module, then pass the normalized values in as props.
+
+### Events
+
+Status: very alpha. Expect change.
+
+```js
+import {
+    AJAX_ADD_TO_CART_ERROR_EVENT,
+    AJAX_ADD_TO_CART_EVENT,
+    CATALOG_ADD_TO_CART_REDIRECT_EVENT,
+    CUSTOMER_SECTIONS_UPDATED_EVENT,
+    STOREFRONT_MESSAGE_EVENT,
+    dispatchCompatEvent,
+    dispatchStorefrontEvent,
+    listenForStorefrontEvent,
+} from '@modules/BA_Svelte/js/lib/events.js';
+```
+
+Use `events.js` for:
+
+- canonical BA storefront events
+- compatibility events where Magento or jQuery listeners still need to hear them
+
+Rules:
+
+- use namespaced `ba:*` event names for platform events
+- keep payloads plain objects
+- use `dispatchStorefrontEvent()` and `listenForStorefrontEvent()` instead of ad hoc `CustomEvent` helpers
+- use `dispatchCompatEvent()` only when compatibility listeners matter
+
+### Messages
+
+Status: very alpha. Expect change.
+
+```js
+import {
+    STORE_MESSAGE_TYPES,
+    applyMessagePayload,
+    dispatchStorefrontMessage,
+    updateMessageFragment,
+} from '@modules/BA_Svelte/js/lib/messages.js';
+```
+
+Use `messages.js` for:
+
+- client-side success, error, and info messages
+- Magento message fragments returned from AJAX responses
+
+Rules:
+
+- use `dispatchStorefrontMessage()` for client-generated messages
+- use `applyMessagePayload()` when a server response may contain messages or message HTML
+- `[data-placeholder="messages"]` is the default fragment target unless a feature deliberately overrides it
+
+### Forms
+
+Status: very alpha. Expect change.
+
+```js
+import {
+    applyValidationRules,
+    createAjaxFormController,
+    redirectTo,
+    resolveFormElement,
+    validateForm,
+} from '@modules/BA_Svelte/js/lib/forms.js';
+```
+
+Use `forms.js` for:
+
+- validation
+- AJAX submit lifecycle
+- loading and disabled states
+- redirect behavior after submit
+
+Rules:
+
+- `validateForm()` is the replacement for manual Magento validation bootstraps in Svelte-driven flows
+- `createAjaxFormController()` is the main AJAX form API
+- the controller owns `aria-busy`, deduplicated submits, and button state
+- redirects should go through `redirectTo()`
+
+### Commerce
+
+Status: very alpha. Expect change.
+
+```js
+import {
+    createAddToCartController,
+} from '@modules/BA_Svelte/js/lib/commerce.js';
+```
+
+Use `commerce.js` for:
+
+- add-to-cart behavior
+
+Rules:
+
+- `createAddToCartController()` is the official JS API
+- `<ba-add-to-cart>` is the official declarative markup API for the same flow
+- stock patching, fragment refreshes, and compatibility events are internal implementation details behind that contract
+
+Migration shim that still exists:
+
+- `@modules/BA_Svelte/js/lib/catalog/add-to-cart.js`
+
+This shim is also very alpha and can change.
+
+### Magento Utilities
+
+```js
+import {
+    buildRestUrl,
+    buildStorefrontUrl,
+    requestMagentoJson,
+} from '@modules/BA_Svelte/js/lib/magento.js';
+```
+
+Use `magento.js` for:
+
+- storefront URL construction
+- store-scoped REST URLs
+- generic JSON transport to Magento
+
+Rules:
+
+- prefer server-resolved URLs via props when the route is already known during render
+- use `buildRestUrl()` instead of feature-local `rest/${storeCode}/V1/...` glue
+- use `requestMagentoJson()` for transport concerns only, not feature-specific business rules
+
+## Use Declarative Runtime Elements Where They Fit
+
+The runtime bootstrap itself is internal, but these markup contracts are public:
+
+- `<ba-collapsible>`
+- `<ba-accordion>`
+- `<ba-modal>`
+- `<ba-add-to-cart>`
+- `<ba-quantity-switch>`
+
+Example modal:
+
+```html
+<ba-modal trigger=".open-size-guide">
+    <h2>Size guide</h2>
+    <button type="button" data-ba-modal-close>Close</button>
+</ba-modal>
+```
+
+Example add-to-cart wrapper:
+
+```html
+<ba-add-to-cart>
+    <form data-role="tocart-form" action="/checkout/cart/add" method="post">
+        ...
+        <button type="submit" class="action tocart primary">
+            <span>Add to Cart</span>
+        </button>
+    </form>
+</ba-add-to-cart>
+```
+
+`<ba-quantity-switch>` is also a public contract. Its controller lives behind the runtime, so feature modules should use the element instead of importing quantity-switch internals.
+
+## Replace Magento JS With BA_Svelte Contracts
+
+When you are modernizing a module, these are the preferred replacements:
+
+| Replace this | Use this BA_Svelte surface | Do not use |
+| --- | --- | --- |
+| `customer-data` wrappers | `state.js` | feature-local customer section adapters |
+| `Magento_Ui/js/modal/modal` | `Popup.svelte` or `<ba-modal>` | runtime modal internals |
+| `Magento_Catalog/js/validate-product` | `forms.js` plus `commerce.js` | feature-local validation bootstraps |
+| `catalogAddToCart` | `commerce.js` or `<ba-add-to-cart>` | feature-local add-to-cart wrappers |
+| repeated REST URL glue | `magento.js` | feature-local URL helpers |
+| feature-local JSON fetch wrappers | `magento.js` | `http.js` from feature code |
+| hand-rolled `CustomEvent` helpers | `events.js` | inline event utilities everywhere |
+| feature-local flash/server message plumbing | `messages.js` | duplicate message fragment implementations |
+
+Internal paths that should not appear in new feature code:
+
+- `@modules/BA_Svelte/js/lib/runtime.js`
+- `@modules/BA_Svelte/js/lib/runtime/*`
+- `@modules/BA_Svelte/js/lib/http.js`
+- `@modules/BA_Svelte/js/lib/url.js`
+
+## Popup Pattern
+
+The default popup direction is native.
 
 Use:
 
-- normal XML arguments plus `computed_props` on `SvelteBlock`
-- normal XML arguments plus `computed_props` on `ComponentBlock`
-
-
-## Shared HTTP Helper
-
-`BA_Svelte` exposes a small JSON-oriented fetch wrapper at:
-
-```js
-import { requestJson } from '@modules/BA_Svelte/js/lib/http.js';
-```
-
-It standardizes the common frontend request defaults used across modules:
-
-- `credentials: 'same-origin'`
-- `Accept: application/json`
-- `X-Requested-With: XMLHttpRequest`
-- automatic JSON body serialization for plain objects and arrays
-- safe JSON response parsing, including empty `204` responses
-- consistent error handling with optional response validation hooks
+- `@modules/BA_Svelte/svelte/popup.svelte`
+- `<ba-modal>`
 
 Example:
 
-```js
-const payload = await requestJson('/customer/section/load', {
-    query: {
-        sections: 'cart',
-        force_new_section_timestamp: 'true',
-    },
-    errorMessage: 'Unable to load cart section.',
-});
+```svelte
+<script>
+    import Popup from '@modules/BA_Svelte/svelte/popup.svelte';
+
+    let popup = null;
+</script>
+
+<button type="button" onclick={() => popup?.open()}>
+    Open size guide
+</button>
+
+<Popup bind:this={popup} title="Size guide">
+    <p>Use your usual fit. This product runs true to size.</p>
+</Popup>
 ```
 
-Module-specific wrappers can stay thin and add only local behavior, such as custom headers or success flags:
+Exit criteria for a migrated popup:
 
-```js
-import { requestJson } from '@modules/BA_Svelte/js/lib/http.js';
+- it does not rely on Magento modal widget lifecycle
+- it can render with native dialog semantics
+- it can move to `Popup.svelte` or `<ba-modal>` without behavior loss
 
-export function requestWishlist(url, params = {}) {
-    return requestJson(url, {
-        query: params,
-        headers: {
-            'X-BA-Wishlist-Request': 'true',
-        },
-        validateResponse: (payload, response) => response.ok && payload?.success !== false,
-        errorMessage: 'Wishlist request failed.',
-    });
-}
-```
+## Build And Deploy
 
-## Build Workflow
-
-### Normal Magento flow
+### Normal Magento Flow
 
 1. Run `bin/magento setup:static-content:deploy`
-2. `BA_Svelte` detects deployed storefront roots containing `BA_Svelte/svelte-src/src/main.js`
-3. For each root, it runs `npm run build` inside `BA_Svelte/view/frontend/web/svelte-src`
+2. `BA_Svelte` detects deployed storefront roots containing BA_Svelte assets
+3. For each deployed root, it runs `npm run build` inside `view/frontend/web/svelte-src`
 
-### Manual build
+### Manual Build
 
 ```bash
 cd src/app/code/BA/Svelte/view/frontend/web/svelte-src
 npm run build
 ```
 
-If you need to target a specific deployed storefront root manually:
+If you need to point at one deployed storefront root explicitly:
 
 ```bash
 cd src/app/code/BA/Svelte/view/frontend/web/svelte-src
-SCD_ROOT=/absolute/path/to/pub/static/frontend/<Vendor>/<Theme>/<Locale> npm run build
+SCD_ROOT=/absolute/path/to/pub/static/<area>/<Vendor>/<Theme>/<Locale> npm run build
 ```
 
 ## Notes
 
 - `assets.phtml` deduplicates the shared CSS and JS bundle if multiple Svelte modules include it on the same page.
-- `ComponentBlock` should be used for nested pluggable parts. `SvelteBlock` should be used for root mounts that render `BA_Svelte::root.phtml`.
+- `SvelteBlock` is for root mounts that render `BA_Svelte::root.phtml`.
+- `ComponentBlock` is for nested pluggable components inside root containers.
+- `SvelteLink` is for sorted link collections.
+- Use `.svelte-root` blocks or the documented custom elements for new work. Do not build feature modules against runtime internals.

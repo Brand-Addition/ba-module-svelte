@@ -1,7 +1,7 @@
-export const _ = (text) => {
+export const _ = (text, ...args) => {
     if (typeof window !== 'undefined' && typeof window.mageTranslate === 'function') {
-        return window.mageTranslate(text);
+        text = window.mageTranslate(text);
     }
 
-    return text;
+    return args.reduce((translatedText, arg) => translatedText.replace('%s', arg), text);
 };

@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build"
+    "build": "vite build",
+    "check:public-api": "bash ../../../../bin/check-public-api-imports.sh",
+    "test": "node --test tests/*.test.mjs"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.1.2",

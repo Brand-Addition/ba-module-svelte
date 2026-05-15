@@ -19,7 +19,7 @@ function isSerializableJsonBody(body) {
         return false;
     }
 
-    return typeof body === 'object' || Array.isArray(body);
+    return typeof body === 'object';
 }
 
 function createHeaders(headers = {}, body = null) {
@@ -60,9 +60,21 @@ async function parseJsonResponse(response) {
 
     try {
         return JSON.parse(responseText);
-    } catch (error) {
+    } catch {
         return null;
     }
+}
+
+function getRequestBaseUrl() {
+    if (typeof window !== 'undefined' && typeof window.location?.origin === 'string' && window.location.origin !== '') {
+        return `${window.location.origin}/`;
+    }
+
+    if (typeof document !== 'undefined' && typeof document.baseURI === 'string' && document.baseURI.trim() !== '') {
+        return document.baseURI;
+    }
+
+    return 'http://localhost/';
 }
 
 export class JsonRequestError extends Error
@@ -76,7 +88,7 @@ export class JsonRequestError extends Error
 }
 
 export function buildUrl(url, params = {}) {
-    const resolvedUrl = new URL(url, window.location.origin);
+    const resolvedUrl = new URL(url, getRequestBaseUrl());
 
     Object.entries(params).forEach(([key, value]) => {
         if (value === undefined || value === null || value === '') {
@@ -105,6 +117,10 @@ export async function requestJson(url, options = {}) {
         validateResponse = null,
         resolveErrorMessage = null,
     } = options;
+
+    if (typeof fetch !== 'function') {
+        throw new JsonRequestError('Fetch API is unavailable.');
+    }
 
     const response = await fetch(buildUrl(url, query), {
         body: serializeBody(body),

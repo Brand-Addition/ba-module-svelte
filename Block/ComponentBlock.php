@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace BA\Svelte\Block;
@@ -12,7 +13,7 @@ class ComponentBlock extends AbstractSvelteBlock
         'svelte_component',
     ];
 
-    public function getComponentConfig(): SvelteComponentConfig
+    public function getComponentConfig(bool $includePropTypes = false): SvelteComponentConfig
     {
         return new SvelteComponentConfig(
             name: $this->getNameInLayout(),
@@ -22,6 +23,7 @@ class ComponentBlock extends AbstractSvelteBlock
                 computedDataKey: 'computed_props',
                 reservedDataKeys: self::RESERVED_DATA_KEYS
             ),
+            propTypes: $includePropTypes ? $this->resolveViewModelPropTypes() : [],
             containers: $this->getComponentContainers()
         );
     }

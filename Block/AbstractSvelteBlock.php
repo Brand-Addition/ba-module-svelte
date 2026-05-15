@@ -1,13 +1,13 @@
 <?php
+
 declare(strict_types=1);
 
 namespace BA\Svelte\Block;
 
 use BA\Svelte\Model\PropResolverPool;
+use BA\Svelte\Model\StructuredDataNormalizer;
 use BA\Svelte\Model\SvelteComponentConfig;
-use Magento\Framework\DataObject;
 use Magento\Framework\Exception\LocalizedException;
-use Magento\Framework\Phrase;
 use Magento\Framework\Reflection\FieldNamer;
 use Magento\Framework\Reflection\MethodsMap;
 use Magento\Framework\Serialize\Serializer\Json;
@@ -34,10 +34,14 @@ abstract class AbstractSvelteBlock extends Template
         'view_model',
     ];
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function __construct(
         Context $context,
         private readonly Json $jsonSerializer,
         private readonly PropResolverPool $propResolverPool,
+        private readonly StructuredDataNormalizer $dataNormalizer,
         private readonly MethodsMap $methodsMap,
         private readonly FieldNamer $fieldNamer,
         array $data = []
@@ -47,7 +51,7 @@ abstract class AbstractSvelteBlock extends Template
 
     protected function serializeJson(mixed $value): string
     {
-        return $this->jsonSerializer->serialize($value);
+        return (string) $this->jsonSerializer->serialize($value);
     }
 
     /**
@@ -60,44 +64,34 @@ abstract class AbstractSvelteBlock extends Template
         array $reservedDataKeys = []
     ): array {
         $resolvedData = [];
-        $reservedDataKeys = array_values(array_unique(array_merge(
+        $reservedDataKeys = $this->resolveReservedDataKeys(
+            $explicitDataKey,
+            $computedDataKey,
+            $reservedDataKeys
+        );
+
+        $this->mergeData($resolvedData, $this->getExplicitStructuredData($explicitDataKey));
+        $this->mergeData($resolvedData, $this->getImplicitStructuredData($reservedDataKeys));
+        $this->mergeMissingData($resolvedData, $this->resolveViewModelData());
+        $this->mergeData($resolvedData, $this->resolveComputedData($computedDataKey));
+
+        return $resolvedData;
+    }
+
+    /**
+     * @param array<int, string> $reservedDataKeys
+     * @return array<int, string>
+     */
+    private function resolveReservedDataKeys(
+        string $explicitDataKey,
+        string $computedDataKey,
+        array $reservedDataKeys
+    ): array {
+        return array_values(array_unique(array_merge(
             self::COMMON_RESERVED_DATA_KEYS,
             $reservedDataKeys,
             [$explicitDataKey, $computedDataKey]
         )));
-
-        $explicitData = $this->getData($explicitDataKey);
-        if (is_array($explicitData)) {
-            foreach ($explicitData as $key => $value) {
-                if (!is_string($key)) {
-                    continue;
-                }
-
-                $resolvedData[$key] = $this->normalizeValue($value);
-            }
-        }
-
-        foreach ($this->getData() as $key => $value) {
-            if (!is_string($key) || in_array($key, $reservedDataKeys, true)) {
-                continue;
-            }
-
-            $resolvedData[$key] = $this->normalizeValue($value);
-        }
-
-        foreach ($this->resolveViewModelData() as $key => $value) {
-            if (array_key_exists($key, $resolvedData)) {
-                continue;
-            }
-
-            $resolvedData[$key] = $value;
-        }
-
-        foreach ($this->resolveComputedData($computedDataKey) as $key => $value) {
-            $resolvedData[$key] = $value;
-        }
-
-        return $resolvedData;
     }
 
     /**
@@ -105,11 +99,13 @@ abstract class AbstractSvelteBlock extends Template
      */
     protected function getComponentContainers(): array
     {
+        /** @var array<string, array<int, SvelteComponentConfig>> $containers */
         $containers = [];
 
         foreach ($this->getChildElementNames($this->getNameInLayout()) as $childName) {
             if ($this->getLayout()->isContainer($childName)) {
-                $containerName = $this->getLayout()->getElementAlias($childName) ?: 'default';
+                $containerAlias = $this->getLayout()->getElementAlias($childName);
+                $containerName = is_string($containerAlias) && $containerAlias !== '' ? $containerAlias : 'default';
                 $containerItems = $this->collectContainerComponents($childName);
 
                 if ($containerItems === []) {
@@ -125,6 +121,7 @@ abstract class AbstractSvelteBlock extends Template
                 continue;
             }
 
+            $containers['default'] ??= [];
             $containers['default'][] = $childBlock->getComponentConfig();
         }
 
@@ -156,6 +153,19 @@ abstract class AbstractSvelteBlock extends Template
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    private function getExplicitStructuredData(string $explicitDataKey): array
+    {
+        $explicitData = $this->getData($explicitDataKey);
+        if (!is_array($explicitData)) {
+            return [];
+        }
+
+        return $this->dataNormalizer->normalizeAssociativeData($explicitData);
+    }
+
+    /**
      * @return array<int, string>
      */
     private function getChildElementNames(string $parentElementName): array
@@ -170,6 +180,51 @@ abstract class AbstractSvelteBlock extends Template
             $childNames,
             static fn (mixed $childName): bool => is_string($childName) && $childName !== ''
         ));
+    }
+
+    /**
+     * @param array<int, string> $reservedDataKeys
+     * @return array<string, mixed>
+     */
+    private function getImplicitStructuredData(array $reservedDataKeys): array
+    {
+        $resolvedData = [];
+
+        foreach ($this->getData() as $key => $value) {
+            if (!is_string($key) || in_array($key, $reservedDataKeys, true)) {
+                continue;
+            }
+
+            $resolvedData[$key] = $this->dataNormalizer->normalizeValue($value);
+        }
+
+        return $resolvedData;
+    }
+
+    /**
+     * @param array<string, mixed> $target
+     * @param array<string, mixed> $source
+     */
+    private function mergeData(array &$target, array $source): void
+    {
+        foreach ($source as $key => $value) {
+            $target[$key] = $value;
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $target
+     * @param array<string, mixed> $source
+     */
+    private function mergeMissingData(array &$target, array $source): void
+    {
+        foreach ($source as $key => $value) {
+            if (array_key_exists($key, $target)) {
+                continue;
+            }
+
+            $target[$key] = $value;
+        }
     }
 
     /**
@@ -198,7 +253,7 @@ abstract class AbstractSvelteBlock extends Template
                 continue;
             }
 
-            $computedData[$entryName] = $this->normalizeValue(
+            $computedData[$entryName] = $this->dataNormalizer->normalizeValue(
                 $resolver->resolve($entryName, $definition, $this)
             );
         }
@@ -234,48 +289,43 @@ abstract class AbstractSvelteBlock extends Template
                 continue;
             }
 
-            $resolvedData[$fieldName] = $this->normalizeValue($value);
+            $resolvedData[$fieldName] = $this->dataNormalizer->normalizeValue($value);
         }
 
         return $resolvedData;
     }
 
-    protected function normalizeValue(mixed $value): mixed
+    /**
+     * @return array<string, string>
+     */
+    protected function resolveViewModelPropTypes(): array
     {
-        if (is_scalar($value) || $value === null) {
-            return $value;
+        $viewModel = $this->getData('view_model');
+        if (!$viewModel instanceof ArgumentInterface) {
+            return [];
         }
 
-        if (is_array($value)) {
-            foreach ($value as $key => $item) {
-                $value[$key] = $this->normalizeValue($item);
+        $viewModelClass = $viewModel::class;
+        $propTypes = [];
+
+        foreach (array_keys($this->methodsMap->getMethodsMap($viewModelClass)) as $methodName) {
+            if (!$this->methodsMap->isMethodValidForDataField($viewModelClass, $methodName)) {
+                continue;
             }
 
-            return $value;
+            $fieldName = $this->fieldNamer->getFieldNameForMethodName($methodName);
+            if (!is_string($fieldName) || $fieldName === '') {
+                continue;
+            }
+
+            $propType = $this->methodsMap->getMethodReturnType($viewModelClass, $methodName);
+            if (!is_string($propType) || $propType === '') {
+                continue;
+            }
+
+            $propTypes[$fieldName] = $propType;
         }
 
-        if ($value instanceof Phrase) {
-            return (string)$value;
-        }
-
-        if ($value instanceof DataObject) {
-            return $this->normalizeValue($value->getData());
-        }
-
-        if ($value instanceof \JsonSerializable) {
-            return $this->normalizeValue($value->jsonSerialize());
-        }
-
-        if (is_object($value) && method_exists($value, 'toArray')) {
-            /** @var mixed $arrayValue */
-            $arrayValue = $value->toArray();
-            return $this->normalizeValue($arrayValue);
-        }
-
-        if (is_object($value) && method_exists($value, '__toString')) {
-            return (string)$value;
-        }
-
-        return null;
+        return $propTypes;
     }
 }

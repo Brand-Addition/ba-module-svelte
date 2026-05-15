@@ -1,19 +1,22 @@
 <?php
+
 declare(strict_types=1);
 
 namespace BA\Svelte\Model;
 
-final readonly class SvelteComponentConfig implements \JsonSerializable
+final class SvelteComponentConfig implements \JsonSerializable
 {
     /**
      * @param array<string, mixed> $props
+     * @param array<string, string> $propTypes
      * @param array<string, array<int, self>> $containers
      */
     public function __construct(
-        public string $name,
-        public string $component,
-        public array $props = [],
-        public array $containers = []
+        public readonly string $name,
+        public readonly string $component,
+        public readonly array $props = [],
+        public readonly array $propTypes = [],
+        public readonly array $containers = []
     ) {
     }
 

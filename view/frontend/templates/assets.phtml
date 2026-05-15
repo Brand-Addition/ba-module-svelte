@@ -1,29 +1,48 @@
 <?php
-/** @var \Magento\Framework\View\Element\Template $block */
+/** @var \BA\Svelte\Block\Assets $block */
 /** @var \Magento\Framework\Escaper $escaper */
 /** @var \Magento\Framework\View\Helper\SecureHtmlRenderer $secureRenderer */
+$storeCode = $block->getStoreCode();
 $entryStyleUrl = $block->getViewFileUrl('js/dist/svelte-app.css');
 $entryScriptUrl = $block->getViewFileUrl('js/dist/svelte-app.js');
 $assetBootstrapScript = <<<JS
 (function () {
     var styleUrl = '{$escaper->escapeJs($entryStyleUrl)}';
     var scriptUrl = '{$escaper->escapeJs($entryScriptUrl)}';
+    var storefrontStoreCode = '{$escaper->escapeJs($storeCode)}';
+    var hasOwn = Object.prototype.hasOwnProperty;
+
+    if (typeof storefrontStoreCode === 'string' && storefrontStoreCode !== '') {
+        window.__baStoreCode = storefrontStoreCode;
+    }
 
     window.mageTranslate = window.mageTranslate || function (text) {
         if (typeof text !== 'string' || text === '') {
             return text;
         }
 
+        if (
+            window.__baMagentoTranslationDictionary &&
+            hasOwn.call(window.__baMagentoTranslationDictionary, text)
+        ) {
+            return window.__baMagentoTranslationDictionary[text];
+        }
+
         if (window.mage && typeof window.mage.__ === 'function') {
             return window.mage.__(text);
         }
 
-        if (window.jQuery && window.jQuery.mage && typeof window.jQuery.mage.__ === 'function') {
-            return window.jQuery.mage.__(text);
-        }
-
         return text;
     };
+
+    if (!window.__baMagentoTranslationDictionaryRequested && typeof window.require === 'function') {
+        window.__baMagentoTranslationDictionaryRequested = true;
+        window.require(['mageTranslationDictionary'], function (dictionary) {
+            if (dictionary && typeof dictionary === 'object') {
+                window.__baMagentoTranslationDictionary = dictionary;
+            }
+        });
+    }
 
     if (!document.querySelector('link[data-ba-svelte-bundle="true"][href="' + styleUrl + '"]')) {
         var style = document.createElement('link');

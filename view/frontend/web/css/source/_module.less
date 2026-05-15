@@ -1,0 +1,317 @@
+@baseDir: "../";
+
+& when (@media-common = true) {
+    ba-collapsible,
+    ba-accordion,
+    ba-modal {
+        box-sizing: border-box;
+        display: block;
+    }
+
+    ba-collapsible > [slot="panel"][hidden] {
+        display: none !important;
+    }
+
+    ba-collapsible > details {
+        margin: 0;
+        padding: 0;
+    }
+
+    ba-collapsible > details > summary {
+        &::-webkit-details-marker {
+            display: none;
+        }
+
+        &::marker {
+            display: none;
+        }
+    }
+
+    ba-collapsible,
+    ba-accordion {
+        &:extend(.abs-reset-list all);
+    }
+
+    ba-accordion > ba-collapsible {
+        display: block;
+    }
+
+    ba-accordion > ba-collapsible + ba-collapsible {
+        margin-top: -@border-width__base;
+    }
+
+    ba-accordion[variant="tabs"],
+    ba-accordion[data-ba-accordion-variant="tabs"] {
+        display: block;
+    }
+
+    ba-accordion[variant="tabs"] > [data-ba-accordion-tab-list],
+    ba-accordion[data-ba-accordion-variant="tabs"] > [data-ba-accordion-tab-list] {
+        align-items: end;
+        .lib-css(border-bottom, @tab-content__border);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+    }
+
+    ba-accordion[variant="tabs"] > ba-collapsible,
+    ba-accordion[data-ba-accordion-variant="tabs"] > ba-collapsible {
+        display: block;
+    }
+
+    ba-accordion[variant="tabs"] > ba-collapsible > details,
+    ba-accordion[data-ba-accordion-variant="tabs"] > ba-collapsible > details {
+        display: none;
+    }
+
+    ba-collapsible > details > summary {
+        .lib-button-reset();
+        .lib-icon-font(
+            @icon-down,
+            @_icon-font-size: 12px,
+            @_icon-font-line-height: 12px,
+            @_icon-font-color: @accordion-control__color,
+            @_icon-font-color-hover: @accordion-control__hover__color,
+            @_icon-font-color-active: @accordion-control__active__color,
+            @_icon-font-margin: 0,
+            @_icon-font-position: after,
+            @_icon-font-text-hide: false
+        );
+        .lib-typography(
+            @_color: @accordion-control__color,
+            @_font-family: @accordion-control__font-family,
+            @_font-size: @accordion-control__font-size,
+            @_font-style: @accordion-control__font-style,
+            @_font-weight: @accordion-control__font-weight,
+            @_line-height: @accordion-control__line-height
+        );
+        .lib-link(
+            @_link-color: @accordion-control__color,
+            @_link-text-decoration: @accordion-control__text-decoration,
+            @_link-color-visited: @accordion-control__visited__color,
+            @_link-text-decoration-visited: @accordion-control__visited__text-decoration,
+            @_link-color-hover: @accordion-control__hover__color,
+            @_link-text-decoration-hover: @accordion-control__hover__text-decoration,
+            @_link-color-active: @accordion-control__active__color,
+            @_link-text-decoration-active: @accordion-control__active__text-decoration
+        );
+        .lib-css(background, @accordion-control__background-color);
+        .lib-css(border-top, @accordion-control__border-top);
+        .lib-css(border-right, @accordion-control__border-right);
+        .lib-css(border-bottom, @accordion-control__border-bottom);
+        .lib-css(border-left, @accordion-control__border-left);
+        .lib-css(min-height, @accordion-control__height);
+        .lib-css(padding, @accordion-control__padding-top (@accordion-control__padding-right + @indent__l) @accordion-control__padding-bottom @accordion-control__padding-left);
+        cursor: pointer;
+        display: block;
+        margin: 0;
+        position: relative;
+
+        &:after {
+            position: absolute;
+            right: @accordion-control__padding-right;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+    }
+
+    ba-collapsible > details[open] > summary {
+        .lib-css(background, @accordion-control__active__background-color);
+        .lib-css(color, @accordion-control__active__color);
+        .lib-css(text-decoration, @accordion-control__active__text-decoration);
+        .lib-icon-font-symbol(
+            @icon-up,
+            @_icon-font-position: after
+        );
+    }
+
+    ba-collapsible > details > [part="panel"] {
+        .lib-clearfix();
+        .lib-css(background, @accordion-content__background-color);
+        .lib-css(border, @accordion-content__border);
+        .lib-css(margin, @accordion-content__margin);
+        .lib-css(padding, @accordion-content__padding);
+        box-sizing: border-box;
+    }
+
+    ba-accordion[variant="tabs"] > [data-ba-accordion-tab-list] > [data-ba-accordion-tab],
+    ba-accordion[data-ba-accordion-variant="tabs"] > [data-ba-accordion-tab-list] > [data-ba-accordion-tab] {
+        .lib-typography(
+            @_color: @accordion-control__color,
+            @_font-family: @accordion-control__font-family,
+            @_font-size: @accordion-control__font-size,
+            @_font-style: @accordion-control__font-style,
+            @_font-weight: @accordion-control__font-weight,
+            @_line-height: @accordion-control__line-height
+        );
+        -webkit-appearance: none;
+        .lib-css(background, @tab-control__background-color);
+        .lib-css(border, @tab-content__border);
+        .lib-css(height, @tab-control__height);
+        background-image: none;
+        border-bottom-width: 0;
+        box-shadow: inset 0 -1px 0 @tab-control__border-color;
+        color: @accordion-control__color;
+        cursor: pointer;
+        flex: 1 1 10rem;
+        line-height: inherit;
+        margin: 0 -1px -1px 0;
+        min-height: auto;
+        padding: @accordion-control__padding-top @accordion-control__padding-right @accordion-control__padding-bottom @accordion-control__padding-left;
+        position: relative;
+        text-align: left;
+        text-decoration: none;
+        text-shadow: none;
+        z-index: 1;
+    }
+
+    ba-accordion[variant="tabs"] > [data-ba-accordion-tab-list] > [data-ba-accordion-tab]:focus,
+    ba-accordion[variant="tabs"] > [data-ba-accordion-tab-list] > [data-ba-accordion-tab]:hover,
+    ba-accordion[variant="tabs"] > [data-ba-accordion-tab-list] > [data-ba-accordion-tab]:active,
+    ba-accordion[data-ba-accordion-variant="tabs"] > [data-ba-accordion-tab-list] > [data-ba-accordion-tab]:focus,
+    ba-accordion[data-ba-accordion-variant="tabs"] > [data-ba-accordion-tab-list] > [data-ba-accordion-tab]:hover,
+    ba-accordion[data-ba-accordion-variant="tabs"] > [data-ba-accordion-tab-list] > [data-ba-accordion-tab]:active {
+        .lib-css(background, @tab-control__hover__background-color);
+        .lib-css(border, @tab-content__border);
+        border-bottom-width: 0;
+        .lib-css(border-color, @tab-control__border-color);
+        .lib-css(color, @tab-control__hover__color);
+        .lib-css(text-decoration, @tab-control__hover__text-decoration);
+        box-shadow: inset 0 -1px 0 @tab-control__border-color;
+    }
+
+    ba-accordion[variant="tabs"] > [data-ba-accordion-tab-list] > [data-ba-accordion-tab]:focus-visible,
+    ba-accordion[data-ba-accordion-variant="tabs"] > [data-ba-accordion-tab-list] > [data-ba-accordion-tab]:focus-visible {
+        outline: 2px solid @tab-control__border-color;
+        outline-offset: -2px;
+    }
+
+    ba-accordion[variant="tabs"] > [data-ba-accordion-tab-list] > [data-ba-accordion-tab] > span,
+    ba-accordion[variant="tabs"] > [data-ba-accordion-tab-list] > [data-ba-accordion-tab] > strong,
+    ba-accordion[data-ba-accordion-variant="tabs"] > [data-ba-accordion-tab-list] > [data-ba-accordion-tab] > span,
+    ba-accordion[data-ba-accordion-variant="tabs"] > [data-ba-accordion-tab-list] > [data-ba-accordion-tab] > strong {
+        display: block;
+    }
+
+    ba-accordion[variant="tabs"] > [data-ba-accordion-tab-list] > [data-ba-accordion-tab][aria-selected="true"],
+    ba-accordion[data-ba-accordion-variant="tabs"] > [data-ba-accordion-tab-list] > [data-ba-accordion-tab][aria-selected="true"] {
+        .lib-css(background, @tab-control__active__background-color);
+        .lib-css(color, @tab-control__active__color);
+        .lib-css(text-decoration, @tab-control__active__text-decoration);
+        box-shadow: none;
+        padding-bottom: @tab-control__padding-bottom + @tab-control__border-width;
+        z-index: 2;
+    }
+
+    ba-accordion[variant="tabs"] > [data-ba-accordion-panels],
+    ba-accordion[data-ba-accordion-variant="tabs"] > [data-ba-accordion-panels] {
+        .lib-css(background, @accordion-content__background-color);
+        .lib-css(border, @tab-content__border);
+        margin-top: -1px;
+        position: relative;
+        z-index: 1;
+    }
+
+    ba-accordion[variant="tabs"] > [data-ba-accordion-panels] > [part="panel"],
+    ba-accordion[data-ba-accordion-variant="tabs"] > [data-ba-accordion-panels] > [part="panel"] {
+        .lib-clearfix();
+        .lib-css(background, @accordion-content__background-color);
+        .lib-css(padding, @accordion-content__padding);
+        position: relative;
+        z-index: 1;
+    }
+
+    ba-modal > :not(dialog) {
+        display: none;
+    }
+
+    dialog[data-ba-modal-dialog="true"] {
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        margin: @modal-popup__indent-vertical auto;
+        max-width: 56rem;
+        overflow: visible;
+        padding: 0;
+        width: calc(100% - (2 * @indent__l));
+    }
+
+    dialog[data-ba-modal-dialog="true"]::backdrop {
+        .lib-css(background-color, @modal-overlay__background-color);
+    }
+
+    [data-ba-modal-content="true"] {
+        background: @color-white;
+        border: 1px solid @color-gray-light5;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, .3);
+        box-sizing: border-box;
+        color: @text__color;
+        margin: 0 auto;
+        max-width: 100%;
+        padding: @modal-popup__padding;
+        position: relative;
+    }
+
+    [data-ba-modal-content="true"] > h1:first-child,
+    [data-ba-modal-content="true"] > h2:first-child,
+    [data-ba-modal-content="true"] > h3:first-child,
+    [data-ba-modal-content="true"] > h4:first-child,
+    [data-ba-modal-content="true"] > h5:first-child,
+    [data-ba-modal-content="true"] > h6:first-child {
+        .lib-css(border-bottom, @modal-title__border);
+        .lib-css(font-weight, @font-weight__light);
+        .lib-css(padding-bottom, @indent__s);
+        font-size: @modal-popup-title__font-size;
+        margin: 0 0 @indent__l;
+        min-height: 1em;
+        padding-right: @indent__xl;
+        word-wrap: break-word;
+    }
+
+    [data-ba-modal-content="true"] > :last-child {
+        margin-bottom: 0;
+    }
+
+    [data-ba-modal-content="true"] > .action-close[data-ba-modal-close] {
+        .lib-button-reset();
+        .lib-button-icon(
+            @icon-remove,
+            @_icon-font-color: @modal-action-close__color,
+            @_icon-font-size: @modal-action-close__font-size,
+            @_icon-font-line-height: @modal-action-close__font-size,
+            @_icon-font-text-hide: true
+        );
+        padding: @indent__s;
+        position: absolute;
+        right: 0;
+        top: 0;
+
+        &:hover {
+            &:before {
+                color: @modal-action-close__hover__color;
+            }
+        }
+    }
+}
+
+.media-width(@extremum, @break) when (@extremum = 'max') and (@break = @screen__m) {
+    dialog[data-ba-modal-dialog="true"] {
+        margin: @indent__base auto;
+        max-width: none;
+        width: calc(100% - (2 * @indent__base));
+    }
+
+    [data-ba-modal-content="true"] {
+        padding: @indent__l;
+    }
+
+    [data-ba-modal-content="true"] > h1:first-child,
+    [data-ba-modal-content="true"] > h2:first-child,
+    [data-ba-modal-content="true"] > h3:first-child,
+    [data-ba-modal-content="true"] > h4:first-child,
+    [data-ba-modal-content="true"] > h5:first-child,
+    [data-ba-modal-content="true"] > h6:first-child {
+        .lib-css(font-size, @modal-popup-title-mobile__font-size);
+        .lib-css(font-weight, @font-weight__bold);
+    }
+}

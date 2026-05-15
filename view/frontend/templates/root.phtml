@@ -1,8 +1,17 @@
 <?php
 /** @var \BA\Svelte\Block\SvelteBlock $block */
 /** @var \Magento\Framework\Escaper $escaper */
+
+try {
+    $componentJson = $block->getComponentConfigJson();
+} catch (\Exception $exception) {
+    $componentJson = '{}';
+    echo '<details class="message error"><summary>Error. Click for details</summary>' . $exception->getMessage() . '</details>';
+}
+
+$fallbackHtml = $block->getChildHtml('fallback');
 ?>
 <div
     class="svelte-root"
-    data-config="<?= $escaper->escapeHtmlAttr($block->getComponentConfigJson()) ?>"
-></div>
+    data-config="<?= $escaper->escapeHtmlAttr($componentJson) ?>"
+><?php if ($fallbackHtml !== ''): ?><div data-ba-svelte-fallback><?= /** @noEscape */ $fallbackHtml ?></div><?php endif; ?></div>

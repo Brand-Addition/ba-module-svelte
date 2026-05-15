@@ -1,8 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace BA\Svelte\Plugin;
 
+use BA\Svelte\Model\FrontendAssetSync;
 use Magento\Deploy\Service\DeployStaticContent;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Component\ComponentRegistrar;
@@ -11,6 +13,7 @@ use Magento\Framework\Phrase;
 use Magento\Framework\Shell;
 use Magento\Setup\Console\Command\DeployStaticContentCommand;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class BuildSveltePlugin
@@ -23,39 +26,38 @@ class BuildSveltePlugin
     public function __construct(
         private readonly ComponentRegistrar $registrar,
         private readonly DirectoryList $directoryList,
-        private readonly Shell $shell
+        private readonly Shell $shell,
+        private readonly FrontendAssetSync $frontendAssetSync
     ) {
     }
 
-    public function afterRun(
-        DeployStaticContentCommand $subject,
-        int $result,
-        InputInterface $input,
-        OutputInterface $output
-    ): int {
-        $this->buildSvelteAssets(
-            static function (string $message) use ($output): void {
-                $output->writeln($message);
-            }
-        );
-
-        return $result;
-    }
-
+    /**
+     * @param array<string, mixed> $options
+     */
     public function afterDeploy(
         DeployStaticContent $subject,
         mixed $result,
         array $options
     ): mixed {
-        $this->buildSvelteAssets([$this, 'writeToStdout']);
+        $this->buildSvelteAssets(
+            new ConsoleOutput(),
+            $this->getScdRoots(
+                is_array($options['area'] ?? null) ? $options['area'] : ['all'],
+                is_array($options['exclude-area'] ?? null) ? $options['exclude-area'] : ['none'],
+                is_array($options['theme'] ?? null) ? $options['theme'] : ['all'],
+                is_array($options['exclude-theme'] ?? null) ? $options['exclude-theme'] : ['none'],
+                is_array($options['language'] ?? null) ? $options['language'] : ['all'],
+                is_array($options['exclude-language'] ?? null) ? $options['exclude-language'] : ['none']
+            )
+        );
 
         return $result;
     }
 
     /**
-     * @param callable(string):void $writeLine
+     * @param array<int, string> $scdRoots
      */
-    private function buildSvelteAssets(callable $writeLine): void
+    private function buildSvelteAssets(OutputInterface $output, array $scdRoots): void
     {
         if ($this->buildAttempted) {
             return;
@@ -64,27 +66,26 @@ class BuildSveltePlugin
 
         $svelteSourcePath = $this->getSvelteSourcePath();
         if ($svelteSourcePath === null) {
-            $writeLine('BA Svelte: Skipping build (svelte-src directory not found).');
+            $output->writeln('BA Svelte: Skipping build (svelte-src directory not found).');
             return;
         }
 
         if (!is_file($svelteSourcePath . DIRECTORY_SEPARATOR . 'package.json')) {
-            $writeLine('BA Svelte: Skipping build (package.json not found).');
+            $output->writeln('BA Svelte: Skipping build (package.json not found).');
             return;
         }
 
-        $scdRoots = $this->getScdRoots();
         if ($scdRoots === []) {
-            $writeLine('BA Svelte: Skipping build (no deployed frontend packages found).');
+            $output->writeln('BA Svelte: Skipping build (no deployed frontend packages found).');
             return;
         }
 
         $this->assertNpmIsAvailable();
-        $this->ensureNodeModules($svelteSourcePath, $writeLine);
+        $this->ensureNodeModules($svelteSourcePath, $output);
 
         foreach ($scdRoots as $scdRoot) {
-            $this->syncFrontendAssets($scdRoot);
-            $writeLine(sprintf('BA Svelte: Building bundle for %s', $scdRoot));
+            $this->frontendAssetSync->sync($scdRoot);
+            $output->writeln(sprintf('BA Svelte: Building bundle for %s', $scdRoot));
             $this->runShellCommand(
                 label: 'npm run build',
                 command: 'cd %s && env SCD_ROOT=%s npm run build',
@@ -102,46 +103,113 @@ class BuildSveltePlugin
             return null;
         }
 
-        $sveltePath = $modulePath . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, self::RELATIVE_SVELTE_PATH);
+        $sveltePath = $modulePath
+            . DIRECTORY_SEPARATOR
+            . str_replace('/', DIRECTORY_SEPARATOR, self::RELATIVE_SVELTE_PATH);
 
         return is_dir($sveltePath) ? $sveltePath : null;
     }
 
     /**
+     * @param array<int, string> $areas
+     * @param array<int, string> $excludedAreas
+     * @param array<int, string> $themes
+     * @param array<int, string> $excludedThemes
+     * @param array<int, string> $languages
+     * @param array<int, string> $excludedLanguages
      * @return array<int, string>
      */
-    private function getScdRoots(): array
+    private function getScdRoots(
+        array $areas,
+        array $excludedAreas,
+        array $themes,
+        array $excludedThemes,
+        array $languages,
+        array $excludedLanguages
+    ): array
     {
-        $frontendStaticPath = $this->directoryList->getPath(DirectoryList::STATIC_VIEW)
-            . DIRECTORY_SEPARATOR
-            . 'frontend';
-        $roots = glob($frontendStaticPath . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*');
-        if (!is_array($roots)) {
+        $staticViewPath = $this->directoryList->getPath(DirectoryList::STATIC_VIEW);
+        $areaPatterns = $areas === ['all'] ? ['*'] : $areas;
+
+        $themePatterns = $themes === ['all']
+            ? ['*' . DIRECTORY_SEPARATOR . '*']
+            : array_map(
+                static fn (string $theme): string => str_replace('/', DIRECTORY_SEPARATOR, $theme),
+                $themes
+            );
+        $languagePatterns = $languages === ['all'] ? ['*'] : $languages;
+
+        $roots = [];
+        foreach ($areaPatterns as $areaPattern) {
+            foreach ($themePatterns as $themePattern) {
+                foreach ($languagePatterns as $languagePattern) {
+                    $matches = glob(
+                        $staticViewPath
+                        . DIRECTORY_SEPARATOR
+                        . $areaPattern
+                        . DIRECTORY_SEPARATOR
+                        . $themePattern
+                        . DIRECTORY_SEPARATOR
+                        . $languagePattern
+                    );
+
+                    if (!is_array($matches)) {
+                        continue;
+                    }
+
+                    array_push($roots, ...$matches);
+                }
+            }
+        }
+
+        if ($roots === []) {
             return [];
         }
 
         $roots = array_values(array_filter(
             $roots,
-            fn (string $path): bool => is_dir($path)
-                && is_file($path . DIRECTORY_SEPARATOR . self::MODULE_NAME . DIRECTORY_SEPARATOR . 'svelte-src' . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'main.js')
+            function (string $path) use ($excludedAreas, $excludedThemes, $excludedLanguages, $staticViewPath): bool {
+                if (!is_dir($path) || !$this->hasScdEntryPoint($path)) {
+                    return false;
+                }
+
+                $relativePath = substr(
+                    $path,
+                    strlen($staticViewPath . DIRECTORY_SEPARATOR)
+                );
+                if (!is_string($relativePath) || $relativePath === '') {
+                    return false;
+                }
+
+                $segments = explode(DIRECTORY_SEPARATOR, $relativePath);
+                if (count($segments) < 4) {
+                    return false;
+                }
+
+                $area = $segments[0];
+                $theme = $segments[1] . '/' . $segments[2];
+                $language = $segments[3];
+
+                return !in_array($area, $excludedAreas, true)
+                    && !in_array($theme, $excludedThemes, true)
+                    && !in_array($language, $excludedLanguages, true);
+            }
         ));
 
+        $roots = array_values(array_unique($roots));
         sort($roots);
 
         return $roots;
     }
 
-    /**
-     * @param callable(string):void $writeLine
-     */
-    private function ensureNodeModules(string $svelteSourcePath, callable $writeLine): void
+    private function ensureNodeModules(string $svelteSourcePath, OutputInterface $output): void
     {
         if ($this->hasBuildDependencies($svelteSourcePath)) {
             return;
         }
 
         if (is_file($svelteSourcePath . DIRECTORY_SEPARATOR . 'package-lock.json')) {
-            $writeLine('BA Svelte: Installing dependencies with npm ci...');
+            $output->writeln('BA Svelte: Installing dependencies with npm ci...');
             $this->runShellCommand(
                 label: 'npm ci',
                 command: 'cd %s && npm ci',
@@ -151,7 +219,7 @@ class BuildSveltePlugin
             return;
         }
 
-        $writeLine('BA Svelte: Installing dependencies with npm install...');
+        $output->writeln('BA Svelte: Installing dependencies with npm install...');
         $this->runShellCommand(
             label: 'npm install',
             command: 'cd %s && npm install',
@@ -179,79 +247,19 @@ class BuildSveltePlugin
         );
     }
 
-    private function writeToStdout(string $message): void
+    private function hasScdEntryPoint(string $path): bool
     {
-        if (!defined('STDOUT')) {
-            return;
-        }
-
-        fwrite(STDOUT, $message . PHP_EOL);
-    }
-
-    private function syncFrontendAssets(string $scdRoot): void
-    {
-        foreach ($this->registrar->getPaths(ComponentRegistrar::MODULE) as $moduleName => $modulePath) {
-            if (!is_string($moduleName) || !is_string($modulePath) || $moduleName === '' || $modulePath === '') {
-                continue;
-            }
-
-            $sourcePath = $modulePath . DIRECTORY_SEPARATOR . 'view' . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'web';
-            if (!$this->shouldSyncModuleAssets($sourcePath)) {
-                continue;
-            }
-
-            $targetPath = $scdRoot . DIRECTORY_SEPARATOR . $moduleName;
-            $this->copyDirectoryContents($sourcePath, $targetPath);
-        }
-    }
-
-    private function shouldSyncModuleAssets(string $sourcePath): bool
-    {
-        if (!is_dir($sourcePath)) {
-            return false;
-        }
-
-        return is_dir($sourcePath . DIRECTORY_SEPARATOR . 'svelte')
-            || is_dir($sourcePath . DIRECTORY_SEPARATOR . 'svelte-src');
-    }
-
-    private function copyDirectoryContents(string $sourcePath, string $targetPath): void
-    {
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($sourcePath, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::SELF_FIRST
+        return is_file(
+            $path
+            . DIRECTORY_SEPARATOR
+            . self::MODULE_NAME
+            . DIRECTORY_SEPARATOR
+            . 'svelte-src'
+            . DIRECTORY_SEPARATOR
+            . 'src'
+            . DIRECTORY_SEPARATOR
+            . 'main.js'
         );
-
-        foreach ($iterator as $item) {
-            $relativePath = $iterator->getSubPathName();
-            if ($this->shouldSkipSyncedPath($relativePath)) {
-                continue;
-            }
-
-            $destination = $targetPath . DIRECTORY_SEPARATOR . $relativePath;
-
-            if ($item->isDir()) {
-                if (!is_dir($destination)) {
-                    mkdir($destination, 0775, true);
-                }
-                continue;
-            }
-
-            $destinationDirectory = dirname($destination);
-            if (!is_dir($destinationDirectory)) {
-                mkdir($destinationDirectory, 0775, true);
-            }
-
-            copy($item->getPathname(), $destination);
-        }
-    }
-
-    private function shouldSkipSyncedPath(string $relativePath): bool
-    {
-        $segments = preg_split('#[\\\\/]#', $relativePath) ?: [];
-
-        return in_array('node_modules', $segments, true)
-            || in_array('dist', $segments, true);
     }
 
     /**
