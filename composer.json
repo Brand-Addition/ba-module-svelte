@@ -48,5 +48,11 @@
       "psr-4": {
         "BA\\Svelte\\": ""
       }
-    }
+    },
+    "repositories": [
+      {
+        "type": "composer",
+        "url": "https://repo.magento.com/"
+      }
+    ]
   }
