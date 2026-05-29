@@ -177,7 +177,7 @@ class BuildSveltePlugin
                     $path,
                     strlen($staticViewPath . DIRECTORY_SEPARATOR)
                 );
-                if ($relativePath === '') {
+                if (!is_string($relativePath) || $relativePath === '') {
                     return false;
                 }
 

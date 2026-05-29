@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Cache/etc/cache.xsd">
+    <type name="ba_svelte_translations" instance="BA\Svelte\Model\Cache\Type\Translations">
+        <label>BA Svelte Translations</label>
+        <description>Cache extracted and translated phrases for BA Svelte storefront runtime.</description>
+    </type>
+</config>

@@ -37,6 +37,10 @@
         old_price_label: oldPriceLabel = 'Was',
     }: PriceInformation = $props();
 
+    const defaultMinimalPriceLabel = _('As low as');
+    const defaultSpecialPriceLabel = _('Special Price');
+    const defaultOldPriceLabel = _('Was');
+
     const normalizeAmount = (amount: AmountValue): number | null => {
         const value = Number(amount);
 
@@ -59,6 +63,12 @@
         }
     };
 
+    const translatePriceLabel = (
+        label: string,
+        defaultLabel: string,
+        translatedDefaultLabel: string
+    ): string => (label === defaultLabel ? translatedDefaultLabel : _(label));
+
     let finalAmount = $derived(normalizeAmount(finalPrice) ?? 0);
     let regularAmount = $derived(normalizeAmount(regularPrice) ?? finalAmount);
     let minimalAmount = $derived(normalizeAmount(minimalPrice));
@@ -67,18 +77,20 @@
     let formattedMinimalPrice = $derived(minimalAmount === null ? '' : formatAmount(minimalAmount));
     let hasDiscount = $derived(hasSpecialPrice && finalAmount <= regularAmount && finalAmount !== regularAmount);
     let minimalPriceText = $derived(
-        formattedMinimalPrice === '' ? '' : `${_(minimalPriceLabel)} ${formattedMinimalPrice}`
+        formattedMinimalPrice === ''
+            ? ''
+            : `${translatePriceLabel(minimalPriceLabel, 'As low as', defaultMinimalPriceLabel)} ${formattedMinimalPrice}`
     );
 </script>
 
 <div class="price-box">
     {#if hasDiscount}
         <span class="special-price">
-            <span class="price-label">{_(specialPriceLabel)}</span>
+            <span class="price-label">{translatePriceLabel(specialPriceLabel, 'Special Price', defaultSpecialPriceLabel)}</span>
             <span class="price">{formattedFinalPrice}</span>
         </span>
         <span class="old-price">
-            <span class="price-label">{_(oldPriceLabel)}</span>
+            <span class="price-label">{translatePriceLabel(oldPriceLabel, 'Was', defaultOldPriceLabel)}</span>
             <span class="price">{formattedRegularPrice}</span>
         </span>
     {:else}

@@ -303,6 +303,20 @@ test('messages facade dispatches client messages and updates server fragments', 
     assert.equal(target.innerHTML, '<div class="message-success">Server message</div>');
 });
 
+test('messages facade sanitizes unsafe server fragments', async () => {
+    const { document } = installDom();
+    const messages = await import('../../js/lib/messages.js');
+    const target = new FakeElement();
+
+    document.registerSelector('[data-placeholder="messages"]', target);
+
+    messages.applyMessagePayload({
+        messages: '<div onclick="alert(1)"><script>alert(1)</script><a href="javascript:alert(1)">Unsafe</a><span>Safe</span></div>',
+    });
+
+    assert.equal(target.innerHTML, '<div><a>Unsafe</a><span>Safe</span></div>');
+});
+
 test('forms facade applies validation and manages one AJAX submit lifecycle', async () => {
     installDom();
     const forms = await import('../../js/lib/forms.js');
@@ -343,21 +357,52 @@ test('forms facade applies validation and manages one AJAX submit lifecycle', as
     assert.equal(button.textContent, 'Saved');
 });
 
+test('forms facade only redirects to same-origin http urls', async () => {
+    const { window } = installDom();
+    const forms = await import('../../js/lib/forms.js');
+
+    assert.equal(forms.redirectTo('/customer/account'), true);
+    assert.equal(window.location.assignedUrl, 'https://example.test/customer/account');
+
+    delete window.location.assignedUrl;
+
+    assert.equal(forms.redirectTo('https://evil.test/phish'), false);
+    assert.equal(window.location.assignedUrl, undefined);
+
+    assert.equal(forms.redirectTo('javascript:alert(1)'), false);
+    assert.equal(window.location.assignedUrl, undefined);
+});
+
 test('commerce facade creates add-to-cart controllers through one official API', async () => {
     const { document } = installDom();
     const commerce = await import('../../js/lib/commerce.js');
     const form = new FakeFormElement();
     const button = new FakeButtonElement();
+    const messagesTarget = new FakeElement();
+    const minicartTarget = new FakeElement();
+    const productStatus = new FakeElement();
+    const productStatusLabel = new FakeElement('span');
+    const scope = new FakeElement();
 
     form.queryMap.set('.action.primary', button);
     form.formDataEntries = [['product', '42']];
     document.body = new FakeElement('body');
+    document.registerSelector('[data-placeholder="messages"]', messagesTarget);
+    document.registerSelector('[data-block="minicart"]', minicartTarget);
+    form.closestMap.set('.product-item-info, .product-info-main, .product-add-form, .product-item', scope);
+    scope.queryAllMap.set('.stock.available', [productStatus]);
+    productStatus.queryMap.set('span', productStatusLabel);
 
     const controller = commerce.createAddToCartController(form, {
         sendRequest() {
             return {
                 payload: {
-                    messages: '<div class="message-success">Added</div>',
+                    backUrl: 'https://evil.test/blocked',
+                    messages: '<div class="message-success" onclick="alert(1)">Added<script>alert(1)</script></div>',
+                    minicart: '<div><img src="x" onerror="alert(1)"></div>',
+                    product: {
+                        statusText: '<img src=x onerror=alert(1)>Sold out',
+                    },
                 },
                 response: {
                     ok: true,
@@ -370,6 +415,10 @@ test('commerce facade creates add-to-cart controllers through one official API',
 
     assert.ok(controller);
     assert.equal(await controller.submit(), true);
+    assert.equal(messagesTarget.innerHTML, '<div class="message-success">Added</div>');
+    assert.equal(minicartTarget.outerHTML, '<div><img src="x"></div>');
+    assert.equal(productStatusLabel.textContent, '<img src=x onerror=alert(1)>Sold out');
+    assert.equal(productStatusLabel.innerHTML, '');
 });
 
 test('magento utility builds storefront URLs, REST URLs, and JSON requests', async () => {
@@ -423,13 +472,24 @@ test('magento utility builds storefront URLs, REST URLs, and JSON requests', asy
     assert.equal(request.options.headers.get('X-Requested-With'), 'XMLHttpRequest');
 });
 
-test('i18n helper translates through mageTranslate and falls back to the source text', async () => {
+test('i18n helper translates through baTranslate and preserves placeholders', async () => {
     const { window } = installDom();
-    const i18n = await import('../../js/lib/i18n.js');
+    const [i18n, translation] = await Promise.all([
+        import('../../js/lib/i18n.js'),
+        import('../../js/lib/translation.js'),
+    ]);
 
     assert.equal(i18n._('Open size guide'), 'Open size guide');
 
-    window.mageTranslate = (text) => `translated:${text}`;
+    translation.registerSvelteTranslations({
+        '%s days': 'translated %s days',
+        'Quote name': 'Translated quote name',
+        View: 'Translated view',
+    }, window);
+    translation.ensureBaTranslate(window);
 
-    assert.equal(i18n._('Open size guide'), 'translated:Open size guide');
+    assert.equal(i18n._('View'), 'Translated view');
+    assert.equal(i18n._('Quote name'), 'Translated quote name');
+    assert.equal(i18n._('%s days', 14), 'translated 14 days');
+    assert.equal(i18n._('Unregistered phrase'), 'Unregistered phrase');
 });

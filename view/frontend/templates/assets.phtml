@@ -3,6 +3,7 @@
 /** @var \Magento\Framework\Escaper $escaper */
 /** @var \Magento\Framework\View\Helper\SecureHtmlRenderer $secureRenderer */
 $storeCode = $block->getStoreCode();
+$svelteTranslationsJson = $block->getSvelteTranslationsJson();
 $entryStyleUrl = $block->getViewFileUrl('js/dist/svelte-app.css');
 $entryScriptUrl = $block->getViewFileUrl('js/dist/svelte-app.js');
 $assetBootstrapScript = <<<JS
@@ -10,39 +11,24 @@ $assetBootstrapScript = <<<JS
     var styleUrl = '{$escaper->escapeJs($entryStyleUrl)}';
     var scriptUrl = '{$escaper->escapeJs($entryScriptUrl)}';
     var storefrontStoreCode = '{$escaper->escapeJs($storeCode)}';
-    var hasOwn = Object.prototype.hasOwnProperty;
+    var svelteTranslations = {$svelteTranslationsJson};
 
     if (typeof storefrontStoreCode === 'string' && storefrontStoreCode !== '') {
         window.__baStoreCode = storefrontStoreCode;
     }
 
-    window.mageTranslate = window.mageTranslate || function (text) {
+    window.__baSvelteTranslations = Object.assign(
+        window.__baSvelteTranslations || Object.create(null),
+        svelteTranslations
+    );
+
+    window.baTranslate = window.baTranslate || function (text) {
         if (typeof text !== 'string' || text === '') {
             return text;
         }
 
-        if (
-            window.__baMagentoTranslationDictionary &&
-            hasOwn.call(window.__baMagentoTranslationDictionary, text)
-        ) {
-            return window.__baMagentoTranslationDictionary[text];
-        }
-
-        if (window.mage && typeof window.mage.__ === 'function') {
-            return window.mage.__(text);
-        }
-
-        return text;
+        return window.__baSvelteTranslations[text] || text;
     };
-
-    if (!window.__baMagentoTranslationDictionaryRequested && typeof window.require === 'function') {
-        window.__baMagentoTranslationDictionaryRequested = true;
-        window.require(['mageTranslationDictionary'], function (dictionary) {
-            if (dictionary && typeof dictionary === 'object') {
-                window.__baMagentoTranslationDictionary = dictionary;
-            }
-        });
-    }
 
     if (!document.querySelector('link[data-ba-svelte-bundle="true"][href="' + styleUrl + '"]')) {
         var style = document.createElement('link');

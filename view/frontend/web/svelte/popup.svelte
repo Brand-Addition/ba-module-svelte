@@ -11,6 +11,7 @@
     } = $props();
 
     const dispatch = createEventDispatcher();
+    const defaultCloseLabel = _('Close');
 
     let dialog = null;
 
@@ -68,7 +69,7 @@
             <header class="ba-svelte-popup__header">
                 <h2>{title}</h2>
                 <button class="ba-svelte-popup__close" type="button" onclick={() => requestClose('close-button')}>
-                    {_(closeLabel)}
+                    {closeLabel === 'Close' ? defaultCloseLabel : _(closeLabel)}
                 </button>
             </header>
         {/if}

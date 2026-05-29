@@ -441,7 +441,11 @@ This shim is also very alpha and can change.
 import { _ } from '@modules/BA_Svelte/js/lib/i18n.js';
 ```
 
-This uses `window.mageTranslate()` when Magento provides it and falls back to the original string otherwise.
+This uses `window.baTranslate()` and falls back to the original string when no Svelte translation entry exists.
+
+`BA_Svelte` scans Svelte-backed `.svelte`, `.ts`, and `.js` source files on the Magento side and exposes a translated hashmap to the storefront runtime.
+
+Use `_('Literal phrase')` for any Svelte-authored text that needs Magento translation. Dynamic expressions, concatenated strings, and template literals with expressions are not extracted into the BA_Svelte translation map, so they fall back to the original source text.
 
 Example:
 
