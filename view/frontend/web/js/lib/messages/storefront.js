@@ -3,6 +3,7 @@ import {
     STOREFRONT_MESSAGES_UPDATED_EVENT,
     dispatchStorefrontEvent,
 } from '../events/storefront.js';
+import { sanitizeHtmlFragment } from '../security.js';
 
 export const DEFAULT_MESSAGES_SELECTOR = '[data-placeholder="messages"]';
 export const STORE_MESSAGE_TYPES = Object.freeze({
@@ -55,7 +56,7 @@ export function updateMessageFragment(html, options = {}) {
         return null;
     }
 
-    target.innerHTML = html;
+    target.innerHTML = sanitizeHtmlFragment(html);
 
     dispatchStorefrontEvent(target, STOREFRONT_MESSAGES_UPDATED_EVENT, {
         html,

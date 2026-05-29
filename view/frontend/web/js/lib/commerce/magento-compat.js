@@ -5,6 +5,7 @@ import {
     CATALOG_ADD_TO_CART_REDIRECT_EVENT,
     dispatchCompatEvent,
 } from '../events/storefront.js';
+import { sanitizeHtmlFragment } from '../security.js';
 
 const redirectParameterHooks = new Set();
 
@@ -18,8 +19,10 @@ export function updateMagentoHtmlFragment(selector, html) {
         return;
     }
 
+    const sanitizedHtml = sanitizeHtmlFragment(html);
+
     if (selector === '[data-block="minicart"]') {
-        target.outerHTML = html;
+        target.outerHTML = sanitizedHtml;
 
         const replacement = document.querySelector(selector);
         if (replacement instanceof HTMLElement) {
@@ -29,7 +32,7 @@ export function updateMagentoHtmlFragment(selector, html) {
         return;
     }
 
-    target.innerHTML = html;
+    target.innerHTML = sanitizedHtml;
 }
 
 export function updateMagentoProductStatus(form, selector, statusText) {
@@ -59,9 +62,9 @@ export function updateMagentoProductStatus(form, selector, statusText) {
 
         const label = element.querySelector('span');
         if (label instanceof HTMLElement) {
-            label.innerHTML = statusText;
+            label.textContent = statusText;
         } else {
-            element.innerHTML = statusText;
+            element.textContent = statusText;
         }
     });
 }

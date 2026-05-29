@@ -1,3 +1,5 @@
+import { resolveSafeRedirectUrl } from '../security.js';
+
 const formControllers = new WeakMap();
 
 function getWindowLocation() {
@@ -208,16 +210,16 @@ export function validateForm(form) {
 }
 
 export function redirectTo(url) {
-    if (typeof url !== 'string' || url.trim() === '') {
-        return;
-    }
-
     const location = getWindowLocation();
     if (!location || typeof location.assign !== 'function') {
-        return;
+        return false;
     }
 
-    const resolvedUrl = url.trim();
+    const resolvedUrl = resolveSafeRedirectUrl(url, location);
+    if (resolvedUrl === '') {
+        return false;
+    }
+
     const currentUrlWithoutHash = String(location.href ?? '').split('#')[0];
     const nextUrlWithoutHash = resolvedUrl.split('#')[0];
 
@@ -226,6 +228,8 @@ export function redirectTo(url) {
     if (currentUrlWithoutHash === nextUrlWithoutHash && typeof location.reload === 'function') {
         location.reload();
     }
+
+    return true;
 }
 
 export function createAjaxFormController(root, options = {}) {

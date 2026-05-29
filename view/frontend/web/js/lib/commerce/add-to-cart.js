@@ -84,8 +84,7 @@ export function createAddToCartController(root, options = {}) {
                 buildEventDetail(form, formData, payload ?? response ?? error)
             );
 
-            if (response?.redirected && response.url) {
-                redirectTo(response.url);
+            if (response?.redirected && response.url && redirectTo(response.url)) {
                 return false;
             }
 
@@ -103,14 +102,14 @@ export function createAddToCartController(root, options = {}) {
                 buildEventDetail(form, formData, payload)
             );
 
-            if (response.redirected && response.url && typeof payload === 'string') {
-                redirectTo(response.url);
+            if (response.redirected && response.url && typeof payload === 'string' && redirectTo(response.url)) {
                 return false;
             }
 
             if (payload && typeof payload === 'object' && typeof payload.backUrl === 'string' && payload.backUrl !== '') {
-                redirectTo(resolveAddToCartRedirectUrl(payload.backUrl, { form }));
-                return false;
+                if (redirectTo(resolveAddToCartRedirectUrl(payload.backUrl, { form }))) {
+                    return false;
+                }
             }
 
             if (payload && typeof payload === 'object') {
