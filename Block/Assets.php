@@ -10,6 +10,9 @@ use BA\Svelte\Model\SvelteTranslationsProvider;
 
 class Assets extends Template
 {
+    /**
+     * @param array<string, mixed> $data
+     */
     public function __construct(
         Context $context,
         private readonly SvelteTranslationsProvider $svelteTranslationsProvider,

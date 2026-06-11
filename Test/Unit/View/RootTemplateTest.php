@@ -53,7 +53,7 @@ class RootTemplateTest extends TestCase
         };
 
         ob_start();
-        include '/home/amear/ba/clients/core/src/app/code/BA/Svelte/view/frontend/templates/root.phtml';
+        include './view/frontend/templates/root.phtml';
 
         return (string) ob_get_clean();
     }

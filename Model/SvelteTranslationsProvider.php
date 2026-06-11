@@ -69,6 +69,7 @@ class SvelteTranslationsProvider
         if ($cacheKey !== '') {
             $cachedTranslations = $this->loadCachedArray($cacheKey);
             if ($cachedTranslations !== null) {
+                /** @var array<string, string> $cachedTranslations */
                 self::$translationsCache[$cacheKey] = $cachedTranslations;
 
                 return $cachedTranslations;
@@ -108,7 +109,11 @@ class SvelteTranslationsProvider
         if ($cacheKey !== '') {
             $cachedPhrases = $this->loadCachedArray($cacheKey);
             if ($cachedPhrases !== null) {
-                self::$phraseCache[$cacheKey] = array_values($cachedPhrases);
+                $values = [];
+                foreach ($cachedPhrases as $item) {
+                    $values[] = (string) $item;
+                }
+                self::$phraseCache[$cacheKey] = $values;
 
                 return self::$phraseCache[$cacheKey];
             }
@@ -146,7 +151,7 @@ class SvelteTranslationsProvider
 
         $phraseList = array_keys($phrases);
         sort($phraseList);
-        self::$phraseCache[$cacheKey] = array_values($phraseList);
+        self::$phraseCache[$cacheKey] = $phraseList;
         if ($cacheKey !== '') {
             $this->saveCachedArray($cacheKey, self::$phraseCache[$cacheKey]);
         }
@@ -178,8 +183,13 @@ class SvelteTranslationsProvider
      */
     private function saveCachedArray(string $cacheKey, array $value): void
     {
+        $value = $this->serializer->serialize($value);
+        if (is_bool($value)) {
+            return;
+        }
+
         $this->cache->save(
-            $this->serializer->serialize($value),
+            $value,
             $cacheKey,
             [],
             null
@@ -266,7 +276,7 @@ class SvelteTranslationsProvider
 
         $resolvedPath = realpath($path);
 
-        return is_string($resolvedPath) && $resolvedPath !== '' ? $resolvedPath : null;
+        return is_string($resolvedPath) ? $resolvedPath : null;
     }
 
     private function shouldScanFile(string $pathname): bool
@@ -300,7 +310,7 @@ class SvelteTranslationsProvider
             $matches = [];
             preg_match_all($pattern, $source, $matches);
 
-            foreach ($matches[1] ?? [] as $rawPhrase) {
+            foreach ($matches[1] as $rawPhrase) {
                 $phrase = stripcslashes($rawPhrase);
                 if ($phrase === '') {
                     continue;
