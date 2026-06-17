@@ -6,7 +6,7 @@ namespace BA\Svelte\Block;
 
 use BA\Svelte\Model\PropResolverPool;
 use BA\Svelte\Model\StructuredDataNormalizer;
-use BA\Svelte\Model\SvelteComponentConfig;
+use BA\Svelte\Model\Dto\SvelteComponentConfig;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Reflection\FieldNamer;
 use Magento\Framework\Reflection\MethodsMap;
@@ -15,7 +15,7 @@ use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
 
-abstract class AbstractSvelteBlock extends Template
+abstract class AbstractSvelteBlock extends Template implements \BA\Svelte\Api\SvelteComponentInterface
 {
     private const COMMON_RESERVED_DATA_KEYS = [
         'as',
@@ -33,6 +33,11 @@ abstract class AbstractSvelteBlock extends Template
         'type',
         'view_model',
     ];
+    
+    private const RESERVED_DATA_KEYS = [
+        'props',
+        'svelte_component',
+    ];
 
     /**
      * @param array<string, mixed> $data
@@ -47,6 +52,21 @@ abstract class AbstractSvelteBlock extends Template
         array $data = []
     ) {
         parent::__construct($context, $data);
+    }
+
+    public function getComponentConfig(bool $includePropTypes = false): SvelteComponentConfig
+    {
+        return new SvelteComponentConfig(
+            name: $this->getNameInLayout(),
+            component: (string)$this->getData('svelte_component'),
+            props: $this->resolveStructuredData(
+                explicitDataKey: 'props',
+                computedDataKey: 'computed_props',
+                reservedDataKeys: self::RESERVED_DATA_KEYS
+            ),
+            propTypes: $includePropTypes ? $this->resolveViewModelPropTypes() : [],
+            containers: $this->getComponentContainers()
+        );
     }
 
     protected function serializeJson(mixed $value): string
@@ -117,7 +137,7 @@ abstract class AbstractSvelteBlock extends Template
             }
 
             $childBlock = $this->getLayout()->getBlock($childName);
-            if (!$childBlock instanceof ComponentBlock) {
+            if (!$childBlock instanceof \BA\Svelte\Api\SvelteComponentInterface) {
                 continue;
             }
 
@@ -142,7 +162,7 @@ abstract class AbstractSvelteBlock extends Template
             }
 
             $childBlock = $this->getLayout()->getBlock($childName);
-            if (!$childBlock instanceof ComponentBlock) {
+            if (!$childBlock instanceof \BA\Svelte\Api\SvelteComponentInterface) {
                 continue;
             }
 

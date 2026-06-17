@@ -24,9 +24,7 @@ That keeps the authoring model simple:
 ## The Main Pieces
 
 - `BA\Svelte\Block\SvelteBlock`
-  Root block for a page-level or section-level Svelte mount.
-- `BA\Svelte\Block\ComponentBlock`
-  Nested Svelte component block for named containers or default child rendering.
+  Any svelte block on frontend. Can be root or child components.
 - `BA\Svelte\Block\SvelteLink`
   Root-style Svelte block for sorted Magento link collections such as `top.links`.
 - `view/frontend/templates/root.phtml`
@@ -106,7 +104,7 @@ Obviously, as its just view xml, a second module can extend the xml we added abo
 
 ```xml
 <referenceContainer name="example.root.container.actions">
-    <block class="BA\Svelte\Block\ComponentBlock"
+    <block class="BA\Svelte\Block\SvelteBlock"
            name="example.root.primary_action">
         <arguments>
             <argument name="svelte_component" xsi:type="string">Vendor_Module::actions/primary-button.svelte</argument>
@@ -217,7 +215,7 @@ There are three normal ways to get data into a component:
 
 ### 1. Plain XML Arguments
 
-Any non-reserved XML argument on a `SvelteBlock` or `ComponentBlock` is normalized into component props.
+Any non-reserved XML argument on a `SvelteBlock` is normalized into component props.
 
 ```xml
 <argument name="heading" xsi:type="string">Example</argument>
@@ -759,7 +757,6 @@ SCD_ROOT=/absolute/path/to/pub/static/<area>/<Vendor>/<Theme>/<Locale> npm run b
 ## Notes
 
 - `assets.phtml` deduplicates the shared CSS and JS bundle if multiple Svelte modules include it on the same page.
-- `SvelteBlock` is for root mounts that render `BA_Svelte::root.phtml`.
-- `ComponentBlock` is for nested pluggable components inside root containers.
+- `SvelteBlock` is for root mounts that render `BA_Svelte::root.phtml` and nested pluggable components inside root containers.
 - `SvelteLink` is for sorted link collections.
 - Use `.svelte-root` blocks or the documented custom elements for new work. Do not build feature modules against runtime internals.

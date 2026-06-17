@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BA\Svelte\Model;
+namespace BA\Svelte\Model\Dto;
 
 final class SvelteComponentConfig implements \JsonSerializable
 {

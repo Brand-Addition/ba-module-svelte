@@ -72,7 +72,7 @@ class PropsSnippetFormatter
      */
     private array $complexTypeCache = [];
 
-    public function format(SvelteComponentConfig $componentConfig): string
+    public function format(\BA\Svelte\Model\Dto\SvelteComponentConfig $componentConfig): string
     {
         $typeLines = [];
         $bindingLines = [];

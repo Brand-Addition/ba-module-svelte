@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace BA\Svelte\Model;
 
-use BA\Svelte\Block\ComponentBlock;
 use Magento\Framework\App\Area;
 use Magento\Framework\App\AreaList;
 use Magento\Framework\App\State;
@@ -25,7 +24,7 @@ class LayoutBlockInspector
     /**
      * @param array<int, string> $layoutHandles
      */
-    public function getComponentConfig(array $layoutHandles, string $blockName, ?string $store = null): SvelteComponentConfig
+    public function getComponentConfig(array $layoutHandles, string $blockName, ?string $store = null): \BA\Svelte\Model\Dto\SvelteComponentConfig
     {
         $blockName = trim($blockName);
         $layoutHandles = $this->normalizeLayoutHandles($layoutHandles);
@@ -38,7 +37,7 @@ class LayoutBlockInspector
             throw new LocalizedException(__('A block name is required.'));
         }
 
-        return $this->runInFrontendArea(function () use ($layoutHandles, $blockName, $store): SvelteComponentConfig {
+        return $this->runInFrontendArea(function () use ($layoutHandles, $blockName, $store): \BA\Svelte\Model\Dto\SvelteComponentConfig {
             $this->areaList->getArea(Area::AREA_FRONTEND)->load();
 
             $initialStoreCode = $this->storeManager->getStore()->getCode();
@@ -63,7 +62,7 @@ class LayoutBlockInspector
                         implode(', ', $layoutHandles)
                     ));
                 }
-                if (!$block instanceof ComponentBlock) {
+                if (!$block instanceof \BA\Svelte\Api\SvelteComponentInterface) {
                     throw new LocalizedException(__(
                         'Block "%1" was found in handles: %2, but is not a BA_Svelte component block.',
                         $blockName,
