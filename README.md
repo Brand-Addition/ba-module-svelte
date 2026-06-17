@@ -2,8 +2,6 @@
 
 `BA_Svelte` is the shared Magento 2 Svelte platform for BA storefront modules.
 
-## What You Build With It
-
 In practice a BA storefront module built on `BA_Svelte` usually looks like this:
 
 1. Layout XML declares a root `SvelteBlock`
@@ -22,6 +20,19 @@ That keeps the authoring model simple:
 - Magento-native `before`, `after`, `move`, and `remove` still work
 
 ## The Main Pieces
+
+Simply, can be condensed to:
+
+- `BA\Svelte\Block\SvelteBlock`
+  Any svelte block on frontend. Can be root or child components.
+- `view/frontend/templates/root.phtml`
+  Emits the `.svelte-root` wrapper, serialized config, and optional server fallback markup.
+- `view/frontend/web/svelte-src`
+  Shared Vite source used to build the runtime bundle against the deployed static-content tree.
+
+To build your svelte interface, and run `bin/magento setup:static-content:deploy -f --jobs=20 --area=frontend` to show on frontend. No need to rm -rf generated or preprocessed folders.
+
+All pieces:
 
 - `BA\Svelte\Block\SvelteBlock`
   Any svelte block on frontend. Can be root or child components.
@@ -181,6 +192,10 @@ Behavior:
 - if config parsing or mount fails, the fallback stays in place
 
 This is root-mount behavior only. It is not a Svelte hydration contract and it does not preserve DOM identity between server HTML and the client component.
+
+## Quick render using the viewmodel
+
+Sometimes you may need to render a svelte block without using the svelte block class. If you bring in `BA\Svelte\ViewModel\SvelteBlockRenderer` as a viewmodel, you can call `render()`. This wont include child components, but will in future.
 
 ## Use A Svelte Mount In Sorted Link Collections
 
