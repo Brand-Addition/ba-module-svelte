@@ -112,11 +112,11 @@ export function createAddToCartController(root, options = {}) {
                 }
             }
 
-            if (payload && typeof payload === 'object') {
-                applyMessagePayload(payload, {
-                    selector: resolvedOptions.messagesSelector,
-                });
-            }
+            // if (payload && typeof payload === 'object') {
+            //     applyMessagePayload(payload, {
+            //         selector: resolvedOptions.messagesSelector,
+            //     });
+            // }
 
             if (payload && typeof payload === 'object' && typeof payload.minicart === 'string') {
                 updateMagentoHtmlFragment(resolvedOptions.minicartSelector, payload.minicart);
