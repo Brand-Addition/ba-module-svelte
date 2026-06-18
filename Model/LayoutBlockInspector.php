@@ -55,6 +55,13 @@ class LayoutBlockInspector
                 $layout->generateElements();
 
                 $block = $layout->getBlock($blockName);
+                if ($block === false) {
+                    throw new LocalizedException(__(
+                        'Block "%1" was not found in handles: %2. Check the debug log for any errors.',
+                        $blockName,
+                        implode(', ', $layoutHandles)
+                    ));
+                }
                 if ($block === null) {
                     throw new LocalizedException(__(
                         'Block "%1" was not found in handles: %2. Check the debug log for any errors.',
@@ -64,7 +71,7 @@ class LayoutBlockInspector
                 }
                 if (!$block instanceof \BA\Svelte\Api\SvelteComponentInterface) {
                     throw new LocalizedException(__(
-                        'Block "%1" was found in handles: %2, but is not a BA_Svelte component block.',
+                        'Block "%1" was found in handles: %2, but is not a BA_Svelte SvelteComponentInterface block.',
                         $blockName,
                         implode(', ', $layoutHandles)
                     ));
