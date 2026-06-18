@@ -655,7 +655,7 @@ Use `magento.js` for:
 Rules:
 
 - prefer server-resolved URLs via props when the route is already known during render
-- use `buildRestUrl()` instead of feature-local `rest/${storeCode}/V1/...` glue
+- use `buildRestUrl()` instead of feature-local `rest/${storeCode}/...` glue. You should only need to include the route configured in `webapi.xml` in your parameter.
 - use `requestMagentoJson()` for transport concerns only, not feature-specific business rules
 
 ## Use Declarative Runtime Elements Where They Fit

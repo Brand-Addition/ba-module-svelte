@@ -163,7 +163,7 @@ export function buildRestUrl(path = '', options = {}) {
     const normalizedPath = typeof path === 'string' ? path.trim().replace(/^\/+/, '') : '';
     const storeCode = resolveStoreCode(options.storeCode);
 
-    return buildStorefrontUrl(`rest/${storeCode}/V1/${normalizedPath}`);
+    return buildStorefrontUrl(`rest/${storeCode}/${normalizedPath}`);
 }
 
 export async function requestMagentoJson(url, options = {}) {
