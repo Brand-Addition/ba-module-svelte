@@ -405,7 +405,7 @@ Rules:
 - files under `svelte/` and documented `js/` entrypoints are fair to reuse
 - files under `svelte-src/` are build/runtime internals unless documented otherwise
 
-## The Public JS APIs You Should Actually Use
+## The Public JS APIs
 
 Most feature modules should build on the public facades below and avoid `js/lib/runtime/*`, `http.js`, and `url.js` directly.
 
@@ -529,46 +529,10 @@ Example:
 
 The component is for rendering only. Decide what the price data should be in Magento or in your owning feature module, then pass the normalized values in as props.
 
-### Events
-
-Status: very alpha. Expect change.
-
-```js
-import {
-    AJAX_ADD_TO_CART_ERROR_EVENT,
-    AJAX_ADD_TO_CART_EVENT,
-    CATALOG_ADD_TO_CART_REDIRECT_EVENT,
-    CUSTOMER_SECTIONS_UPDATED_EVENT,
-    STOREFRONT_MESSAGE_EVENT,
-    dispatchCompatEvent,
-    dispatchStorefrontEvent,
-    listenForStorefrontEvent,
-} from '@modules/BA_Svelte/js/lib/events.js';
-```
-
-Use `events.js` for:
-
-- canonical BA storefront events
-- compatibility events where Magento or jQuery listeners still need to hear them
-
-Rules:
-
-- use namespaced `ba:*` event names for platform events
-- keep payloads plain objects
-- use `dispatchStorefrontEvent()` and `listenForStorefrontEvent()` instead of ad hoc `CustomEvent` helpers
-- use `dispatchCompatEvent()` only when compatibility listeners matter
-
 ### Messages
 
-Status: very alpha. Expect change.
-
 ```js
-import {
-    STORE_MESSAGE_TYPES,
-    applyMessagePayload,
-    dispatchStorefrontMessage,
-    updateMessageFragment,
-} from '@modules/BA_Svelte/js/lib/messages.js';
+import { dispatchStorefrontMessage, STORE_MESSAGE_TYPES } from '@modules/BA_Svelte/js/lib/messages.js';
 ```
 
 Use `messages.js` for:
@@ -576,11 +540,14 @@ Use `messages.js` for:
 - client-side success, error, and info messages
 - Magento message fragments returned from AJAX responses
 
-Rules:
+It emits an event using `window.dispatchEvent()`, theres a mixin to get this working with Luma. If you are *not* using a standard magento theme, you may need to add a listener like `window.addEventListener('svelte:message', (event) => {...}`. As an example see `view/frontend/web/js/magento-mixin/messages.js`
 
-- use `dispatchStorefrontMessage()` for client-generated messages
-- use `applyMessagePayload()` when a server response may contain messages or message HTML
-- `[data-placeholder="messages"]` is the default fragment target unless a feature deliberately overrides it
+#### Example usage:
+
+```js
+dispatchStorefrontMessage(STORE_MESSAGE_TYPES.error, _('Please enter a valid email'));
+dispatchStorefrontMessage(STORE_MESSAGE_TYPES.success, _('Quote shared'));
+```
 
 ### Forms
 
@@ -704,7 +671,6 @@ When you are modernizing a module, these are the preferred replacements:
 | `catalogAddToCart` | `commerce.js` or `<ba-add-to-cart>` | feature-local add-to-cart wrappers |
 | repeated REST URL glue | `magento.js` | feature-local URL helpers |
 | feature-local JSON fetch wrappers | `magento.js` | `http.js` from feature code |
-| hand-rolled `CustomEvent` helpers | `events.js` | inline event utilities everywhere |
 | feature-local flash/server message plumbing | `messages.js` | duplicate message fragment implementations |
 
 Internal paths that should not appear in new feature code:
