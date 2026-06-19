@@ -1,8 +1,3 @@
-import {
-    STOREFRONT_MESSAGE_EVENT,
-    STOREFRONT_MESSAGES_UPDATED_EVENT,
-    dispatchStorefrontEvent,
-} from '../events/storefront.js';
 import { sanitizeHtmlFragment } from '../security.js';
 
 export const DEFAULT_MESSAGES_SELECTOR = '[data-placeholder="messages"]';
@@ -14,7 +9,7 @@ export const STORE_MESSAGE_TYPES = Object.freeze({
 
 function normalizeMessage(type, text) {
     return {
-        text: String(text ?? '').trim(),
+        text: sanitizeHtmlFragment(String(text ?? '').trim()),
         type: String(type ?? STORE_MESSAGE_TYPES.info).trim() || STORE_MESSAGE_TYPES.info,
     };
 }

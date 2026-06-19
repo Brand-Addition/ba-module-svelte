@@ -42,20 +42,18 @@ All pieces:
   Emits the `.svelte-root` wrapper, serialized config, and optional server fallback markup.
 - `view/frontend/web/svelte-src`
   Shared Vite source used to build the runtime bundle against the deployed static-content tree.
-- `view/frontend/web/js/lib/state.js`
-  Public customer-section and store hydration facade.
-- `view/frontend/web/js/lib/events.js`
-  Public storefront event facade.
-- `view/frontend/web/js/lib/messages.js`
-  Public message and Magento fragment update facade.
-- `view/frontend/web/js/lib/forms.js`
-  Public validation and AJAX form facade.
-- `view/frontend/web/js/lib/commerce.js`
-  Public add-to-cart facade.
-- `view/frontend/web/js/lib/magento.js`
-  Public Magento URL and JSON request helper facade.
 - `view/frontend/web/js/lib/i18n.js`
   Public translation helper.
+- `view/frontend/web/js/lib/messages.js`
+  Public message and Magento fragment update facade.
+- `view/frontend/web/js/lib/magento.js`
+  **BETA** Public Magento URL and JSON request helper facade.
+- `view/frontend/web/js/lib/state.js`
+  **ALPHA** Public customer-section and store hydration facade.
+- `view/frontend/web/js/lib/forms.js`
+  **ALPHA** Public validation and AJAX form facade.
+- `view/frontend/web/js/lib/commerce.js`
+  **ALPHA** Public add-to-cart facade.
 - `BuildSveltePlugin`
   Hooks into `setup:static-content:deploy` and builds the merged storefront Svelte bundle in each deployed static-content root that contains `BA_Svelte`.
 
