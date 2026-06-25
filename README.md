@@ -489,22 +489,22 @@ This component handles:
 - optional minimal price / `As low as` output
 - optional minimal-price links back to the product URL
 
-Main props:
+Props:
 
-- `final_price`
-- `regular_price`
-- `has_special_price`
-- `currency_code`
-- `currency_symbol`
-- `locale`
-- `precision`
-- `show_minimal_price`
-- `use_link_for_as_low_as`
-- `minimal_price`
-- `minimal_price_label`
-- `product_url`
-- `special_price_label`
-- `old_price_label`
+`final_price`, **REQUIRED**
+`regular_price`, default = `0,`
+`has_special_price`, default = `false,`
+`currency_code`, default = `window.__baCurrentCurrency,`
+`currency_symbol`, default = `'',`
+`locale`, default = `window.__baCurrentLocale,`
+`precision`, default = `2,`
+`show_minimal_price`, default = `false,`
+`use_link_for_as_low_as`, default = `false,`
+`minimal_price`, default = `null,`
+`minimal_price_label`, default = `_('As low as'),`
+`product_url`, default = `'',`
+`special_price_label`, default = `_('Special Price'),`
+`old_price_label`, default = `_('Was'),`
 
 Example:
 
@@ -518,8 +518,8 @@ Example:
         has_special_price: true,
         currency_code: 'GBP',
         locale: 'en-GB',
-        special_price_label: 'Special Price',
-        old_price_label: 'Was',
+        special_price_label: _('Your price'), // make sure you pass translated labels
+        old_price_label: _('Instead of'),
     };
 </script>
 

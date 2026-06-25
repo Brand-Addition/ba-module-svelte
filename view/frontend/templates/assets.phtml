@@ -4,14 +4,19 @@
 /** @var \Magento\Framework\View\Helper\SecureHtmlRenderer $secureRenderer */
 $storeCode = $block->getStoreCode();
 $svelteTranslationsJson = $block->getSvelteTranslationsJson();
-$entryStyleUrl = $block->getViewFileUrl('js/dist/svelte-app.css');
-$entryScriptUrl = $block->getViewFileUrl('js/dist/svelte-app.js');
+$entryStyleUrl = $block->getViewFileUrl("js/dist/svelte-app.css");
+$entryScriptUrl = $block->getViewFileUrl("js/dist/svelte-app.js");
+$currentLocale = $block->getCurrentLocale();
+$currentCurrency = $block->getCurrentCurrency();
+
 $assetBootstrapScript = <<<JS
 (function () {
     var styleUrl = '{$escaper->escapeJs($entryStyleUrl)}';
     var scriptUrl = '{$escaper->escapeJs($entryScriptUrl)}';
     var storefrontStoreCode = '{$escaper->escapeJs($storeCode)}';
     var svelteTranslations = {$svelteTranslationsJson};
+    var currentLocale = '{$escaper->escapeJs($currentLocale)}';
+    var currentCurrency = '{$escaper->escapeJs($currentCurrency)}';
 
     if (typeof storefrontStoreCode === 'string' && storefrontStoreCode !== '') {
         window.__baStoreCode = storefrontStoreCode;
@@ -45,7 +50,15 @@ $assetBootstrapScript = <<<JS
         window.__baSvelteBundleRequested = true;
         document.head.appendChild(script);
     }
+
+    window.__baCurrentLocale = currentLocale;
+    window.__baCurrentCurrency = currentCurrency;
 }());
 JS;
 ?>
-<?= /* @noEscape */ $secureRenderer->renderTag('script', [], $assetBootstrapScript, false) ?>
+<?= /* @noEscape */ $secureRenderer->renderTag(
+        "script",
+        [],
+        $assetBootstrapScript,
+        false,
+    ) ?>
