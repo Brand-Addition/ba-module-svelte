@@ -64,6 +64,7 @@ The normal starting point is one root block in layout XML.
 ```xml
 <block class="BA\Svelte\Block\SvelteBlock"
        name="example.root"
+<!-- Root must use a phtml template. Only child blocks can use svelte templates here, and leave the `svelte_component` argument -->
        template="BA_Svelte::root.phtml">
     <arguments>
         <argument name="svelte_component" xsi:type="string">Vendor_Module::example-root.svelte</argument>

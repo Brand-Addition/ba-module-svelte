@@ -4,13 +4,8 @@ declare(strict_types=1);
 
 namespace BA\Svelte\Block;
 
-use BA\Svelte\Model\PropResolverPool;
-use BA\Svelte\Model\StructuredDataNormalizer;
 use BA\Svelte\Model\Dto\SvelteComponentConfig;
 use Magento\Framework\Exception\LocalizedException;
-use Magento\Framework\Reflection\FieldNamer;
-use Magento\Framework\Reflection\MethodsMap;
-use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
@@ -33,7 +28,7 @@ abstract class AbstractSvelteBlock extends Template implements \BA\Svelte\Api\Sv
         'type',
         'view_model',
     ];
-    
+
     private const RESERVED_DATA_KEYS = [
         'props',
         'svelte_component',
@@ -44,11 +39,11 @@ abstract class AbstractSvelteBlock extends Template implements \BA\Svelte\Api\Sv
      */
     public function __construct(
         Context $context,
-        private readonly Json $jsonSerializer,
-        private readonly PropResolverPool $propResolverPool,
-        private readonly StructuredDataNormalizer $dataNormalizer,
-        private readonly MethodsMap $methodsMap,
-        private readonly FieldNamer $fieldNamer,
+        private readonly \Magento\Framework\Serialize\Serializer\Json $jsonSerializer,
+        private readonly \BA\Svelte\Model\PropResolverPool $propResolverPool,
+        private readonly \BA\Svelte\Model\StructuredDataNormalizer $dataNormalizer,
+        private readonly \Magento\Framework\Reflection\MethodsMap $methodsMap,
+        private readonly \Magento\Framework\Reflection\FieldNamer $fieldNamer,
         array $data = []
     ) {
         parent::__construct($context, $data);
@@ -58,7 +53,7 @@ abstract class AbstractSvelteBlock extends Template implements \BA\Svelte\Api\Sv
     {
         return new SvelteComponentConfig(
             name: $this->getNameInLayout(),
-            component: (string)$this->getData('svelte_component'),
+            component: $this->getSvelteTemplatePath(),
             props: $this->resolveStructuredData(
                 explicitDataKey: 'props',
                 computedDataKey: 'computed_props',
@@ -67,6 +62,22 @@ abstract class AbstractSvelteBlock extends Template implements \BA\Svelte\Api\Sv
             propTypes: $includePropTypes ? $this->resolveViewModelPropTypes() : [],
             containers: $this->getComponentContainers()
         );
+    }
+
+    /**
+     * Looks for a block argument called `svelte_component` first, then looks for the base magento template
+     */
+    protected function getSvelteTemplatePath(): string
+    {
+        if ($svelteComponent = $this->getData('svelte_component')) {
+            return (string) $svelteComponent;
+        }
+        // return base template
+        if ($this->_template) {
+            return (string) $this->_template;
+        }
+        $this->_logger->error('Missing template for Svelte block: ' . $this->getNameInLayout());
+        return 'BA_Svelte::error/missing-template.svelte';
     }
 
     protected function serializeJson(mixed $value): string

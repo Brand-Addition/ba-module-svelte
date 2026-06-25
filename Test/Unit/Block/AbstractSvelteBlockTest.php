@@ -14,6 +14,7 @@ class AbstractSvelteBlockTest extends TestCase
     private function createTestBlock(array $data = [], $mocks = [])
     {
         $context = $this->createMock(Context::class);
+        $context->method('getLogger')->willReturn($mocks['_logger'] ?? $this->createMock(\Psr\Log\LoggerInterface::class));
 
         $json = $mocks['json'] ?? $this->createMock(Json::class);
         $propResolverPool = $mocks['propResolverPool'] ?? $this->createMock(\BA\Svelte\Model\PropResolverPool::class);
@@ -37,6 +38,14 @@ class AbstractSvelteBlockTest extends TestCase
                 return $this->resolveViewModelPropTypes();
             }
         };
+
+        $block->setNameInLayout('test.block');
+        $layout = $this->createMock(\Magento\Framework\View\LayoutInterface::class);
+        $layout->method('getChildNames')->willReturn([]);
+        $layout->method('isContainer')->willReturn(false);
+        $layout->method('getBlock')->willReturn(null);
+
+        $block->setLayout($layout);
 
         return $block;
     }
@@ -147,5 +156,53 @@ class AbstractSvelteBlockTest extends TestCase
         $propTypes = $block->publicResolveViewModelPropTypes();
         $this->assertArrayHasKey('foo', $propTypes);
         $this->assertSame('string', $propTypes['foo']);
+    }
+
+    public function testMissingTemplate(): void
+    {
+        $logger = $this->createMock(\Psr\Log\LoggerInterface::class);
+        $logger->expects($this->once())->method('error');
+
+        $block = $this->createTestBlock([], ['_logger' => $logger]);
+
+        $result = $block->getComponentConfig(false);
+
+        $this->assertSame(
+            'BA_Svelte::error/missing-template.svelte',
+            $result->component
+        );
+    }
+
+    public function testFallbackToTemplateWhenSvelteComponentIsMissing(): void
+    {
+        $data = [
+            'template' => 'BA_Svelte::template.svelte',
+        ];
+
+        $block = $this->createTestBlock($data);
+
+        $result = $block->getComponentConfig(false);
+
+        $this->assertSame(
+            'BA_Svelte::template.svelte',
+            $result->component
+        );
+    }
+
+    public function testSvelteComponentArgumentTakesPriorityOverTemplate(): void
+    {
+        $data = [
+            'template' => 'BA_Svelte::template.svelte',
+            'svelte_component' => 'BA_Svelte::override.svelte',
+        ];
+
+        $block = $this->createTestBlock($data);
+
+        $result = $block->getComponentConfig(false);
+
+        $this->assertSame(
+            'BA_Svelte::override.svelte',
+            $result->component
+        );
     }
 }
