@@ -11,9 +11,16 @@ class PropResolverPool
     /**
      * @param array<string, PropResolverInterface> $resolvers
      */
-    public function __construct(
-        private readonly array $resolvers = []
-    ) {
+    public function __construct(private readonly array $resolvers = []) {}
+
+    /**
+     * Get all registered resolvers.
+     *
+     * @return array<string, PropResolverInterface>
+     */
+    public function getResolvers(): array
+    {
+        return $this->resolvers;
     }
 
     public function get(string $code): ?PropResolverInterface

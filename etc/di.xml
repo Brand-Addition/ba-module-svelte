@@ -4,6 +4,7 @@
         <arguments>
             <argument name="commands" xsi:type="array">
                 <item name="baSveltePropsCommand" xsi:type="object">BA\Svelte\Console\Command\GeneratePropsSnippetCommand</item>
+                <item name="baSvelteResolverListCommand" xsi:type="object">BA\Svelte\Console\Command\ResolverListCommand</item>
             </argument>
         </arguments>
     </type>

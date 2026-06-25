@@ -288,6 +288,8 @@ Built-in resolvers:
 - `asset`
 - `translate`
 
+You can also list all registered resolvers using the `ba:svelte:resolver:list` command.
+
 Example:
 
 ```xml
