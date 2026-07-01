@@ -53,7 +53,7 @@ All pieces:
 - `view/frontend/web/js/lib/forms.js`
   **ALPHA** Public validation and AJAX form facade.
 - `view/frontend/web/js/lib/commerce.js`
-  **ALPHA** Public add-to-cart facade.
+  **TODO** Public add-to-cart facade.
 - `BuildSveltePlugin`
   Hooks into `setup:static-content:deploy` and builds the merged storefront Svelte bundle in each deployed static-content root that contains `BA_Svelte`.
 
@@ -580,29 +580,7 @@ Rules:
 
 ### Commerce
 
-Status: very alpha. Expect change.
-
-```js
-import {
-    createAddToCartController,
-} from '@modules/BA_Svelte/js/lib/commerce.js';
-```
-
-Use `commerce.js` for:
-
-- add-to-cart behavior
-
-Rules:
-
-- `createAddToCartController()` is the official JS API
-- `<ba-add-to-cart>` is the official declarative markup API for the same flow
-- stock patching, fragment refreshes, and compatibility events are internal implementation details behind that contract
-
-Migration shim that still exists:
-
-- `@modules/BA_Svelte/js/lib/catalog/add-to-cart.js`
-
-This shim is also very alpha and can change.
+Status: Cart behavior, Needs implementing.
 
 ### Magento Utilities
 
@@ -669,7 +647,7 @@ When you are modernizing a module, these are the preferred replacements:
 | `customer-data` wrappers | `state.js` | feature-local customer section adapters |
 | `Magento_Ui/js/modal/modal` | `Popup.svelte` or `<ba-modal>` | runtime modal internals |
 | `Magento_Catalog/js/validate-product` | `forms.js` plus `commerce.js` | feature-local validation bootstraps |
-| `catalogAddToCart` | `commerce.js` or `<ba-add-to-cart>` | feature-local add-to-cart wrappers |
+| `catalogAddToCart` | `commerce.js` or `<ba-add-to-cart>` | feature-local add-to-cart wrappers - **NEEDS IMPLEMENTING** |
 | repeated REST URL glue | `magento.js` | feature-local URL helpers |
 | feature-local JSON fetch wrappers | `magento.js` | `http.js` from feature code |
 | feature-local flash/server message plumbing | `messages.js` | duplicate message fragment implementations |

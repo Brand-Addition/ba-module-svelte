@@ -1,4 +1,3 @@
-import { createAddToCartController } from '../commerce.js';
 import { createAccordionController } from './accordion.js';
 import { createCollapsibleController } from './collapsible.js';
 import { readElementStringAttribute } from './shared.js';
@@ -118,29 +117,29 @@ class BaModalElement extends HTMLElement {
     }
 }
 
-class BaAddToCartElement extends HTMLElement {
-    connectedCallback() {
-        if (this.style.display === '') {
-            this.style.display = 'contents';
-        }
+// class BaAddToCartElement extends HTMLElement {
+//     connectedCallback() {
+//         if (this.style.display === '') {
+//             this.style.display = 'contents';
+//         }
 
-        this.controller = createAddToCartController(this, {
-            addToCartButtonSelector: readElementStringAttribute(this, 'button-selector') || '.action.tocart',
-            messagesSelector: readElementStringAttribute(this, 'messages-selector') || '[data-placeholder="messages"]',
-            minicartSelector: readElementStringAttribute(this, 'minicart-selector') || '[data-block="minicart"]',
-            productStatusSelector: readElementStringAttribute(this, 'product-status-selector') || '.stock.available',
-        });
-    }
+//         this.controller = createAddToCartController(this, {
+//             addToCartButtonSelector: readElementStringAttribute(this, 'button-selector') || '.action.tocart',
+//             messagesSelector: readElementStringAttribute(this, 'messages-selector') || '[data-placeholder="messages"]',
+//             minicartSelector: readElementStringAttribute(this, 'minicart-selector') || '[data-block="minicart"]',
+//             productStatusSelector: readElementStringAttribute(this, 'product-status-selector') || '.stock.available',
+//         });
+//     }
 
-    disconnectedCallback() {
-        this.controller?.destroy?.();
-        this.controller = null;
-    }
+//     disconnectedCallback() {
+//         this.controller?.destroy?.();
+//         this.controller = null;
+//     }
 
-    submit() {
-        return this.controller?.submit?.() ?? false;
-    }
-}
+//     submit() {
+//         return this.controller?.submit?.() ?? false;
+//     }
+// }
 
 class BaQuantitySwitchElement extends HTMLElement {
     connectedCallback() {
@@ -182,9 +181,9 @@ export function registerCustomElements() {
         window.customElements.define('ba-modal', BaModalElement);
     }
 
-    if (!window.customElements.get('ba-add-to-cart')) {
-        window.customElements.define('ba-add-to-cart', BaAddToCartElement);
-    }
+    // if (!window.customElements.get('ba-add-to-cart')) {
+    //     window.customElements.define('ba-add-to-cart', BaAddToCartElement);
+    // }
 
     if (!window.customElements.get('ba-quantity-switch')) {
         window.customElements.define('ba-quantity-switch', BaQuantitySwitchElement);
