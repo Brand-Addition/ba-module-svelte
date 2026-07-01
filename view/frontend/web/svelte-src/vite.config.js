@@ -34,7 +34,7 @@ export default defineConfig(() => {
         ? path.resolve(__dirname, configuredMagentoRoot)
         : defaultMagentoRoot;
     const themeVendor = process.env.THEME_VENDOR || 'BA';
-    const themeName = process.env.THEME_NAME || 'Workday_Theme';
+    const themeName = process.env.THEME_NAME || 'Client_Theme';
     const themeLocale = process.env.THEME_LOCALE || 'en_US';
     const scdRoot = process.env.SCD_ROOT
         ? path.resolve(process.env.SCD_ROOT)

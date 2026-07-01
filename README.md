@@ -410,44 +410,6 @@ Rules:
 
 Most feature modules should build on the public facades below and avoid `js/lib/runtime/*`, `http.js`, and `url.js` directly.
 
-Current stability note:
-
-- `state.js`, `magento.js`, and `i18n.js` are already used internally and are the most proven `js/lib` surfaces today.
-- The other `js/lib` public facades below are still very alpha. Their API shape and behavior will change.
-
-### State
-
-```js
-import {
-    createCustomerSectionStore,
-    getCachedCustomerSection,
-    loadCustomerSection,
-    loadCustomerSections,
-    reloadCustomerSection,
-    reloadCustomerSections,
-    syncCustomerSectionsCache,
-} from '@modules/BA_Svelte/js/lib/state.js';
-```
-
-Use `state.js` for:
-
-- customer sections
-- cache-first reads from `mage-cache-storage`
-- forced reloads through `customer/section/load`
-- shared section store patterns
-
-Rules:
-
-- use `loadCustomerSection()` for normal hydration
-- use `reloadCustomerSection()` when you want cache bypass
-- use `createCustomerSectionStore()` when a feature wants one reusable store contract
-- if you update section payloads locally, persist them with `syncCustomerSectionsCache()`
-
-Migration shim that still exists:
-
-- `@modules/BA_Svelte/js/lib/customer-sections.js`
-
-This shim is also very alpha and can change.
 
 ### Translation
 
@@ -550,6 +512,64 @@ dispatchStorefrontMessage(STORE_MESSAGE_TYPES.error, _('Please enter a valid ema
 dispatchStorefrontMessage(STORE_MESSAGE_TYPES.success, _('Quote shared'));
 ```
 
+### Magento Utilities
+
+```js
+import {
+    buildRestUrl,
+    buildStorefrontUrl,
+    requestMagentoJson,
+} from '@modules/BA_Svelte/js/lib/magento.js';
+```
+
+Use `magento.js` for:
+
+- storefront URL construction
+- store-scoped REST URLs
+- generic JSON transport to Magento
+
+Rules:
+
+- prefer server-resolved URLs via props when the route is already known during render
+- use `buildRestUrl()` instead of feature-local `rest/${storeCode}/...` glue. You should only need to include the route configured in `webapi.xml` in your parameter.
+- use `requestMagentoJson()` for transport concerns only, not feature-specific business rules
+
+Todo:
+
+- GraphQL helpers
+
+### State
+
+Status: very alpha. Expect change.
+
+```js
+import {
+    createCustomerSectionStore,
+    getCachedCustomerSection,
+    loadCustomerSection,
+    loadCustomerSections,
+    reloadCustomerSection,
+    reloadCustomerSections,
+    syncCustomerSectionsCache,
+} from '@modules/BA_Svelte/js/lib/state.js';
+```
+
+Use `state.js` for:
+
+- customer sections
+- cache-first reads from `mage-cache-storage`
+- forced reloads through `customer/section/load`
+- shared section store patterns
+
+Rules:
+
+- use `loadCustomerSection()` for normal hydration
+- use `reloadCustomerSection()` when you want cache bypass
+- use `createCustomerSectionStore()` when a feature wants one reusable store contract
+- if you update section payloads locally, persist them with `syncCustomerSectionsCache()`
+
+It emits a browser event when customer sections are updated and can be mirrored into Magento customer-data through the accompanying mixin in [view/frontend/web/js/magento-mixin/customer-sections.js](view/frontend/web/js/magento-mixin/customer-sections.js).
+
 ### Forms
 
 Status: very alpha. Expect change.
@@ -581,28 +601,6 @@ Rules:
 ### Commerce
 
 Status: Cart behavior, Needs implementing.
-
-### Magento Utilities
-
-```js
-import {
-    buildRestUrl,
-    buildStorefrontUrl,
-    requestMagentoJson,
-} from '@modules/BA_Svelte/js/lib/magento.js';
-```
-
-Use `magento.js` for:
-
-- storefront URL construction
-- store-scoped REST URLs
-- generic JSON transport to Magento
-
-Rules:
-
-- prefer server-resolved URLs via props when the route is already known during render
-- use `buildRestUrl()` instead of feature-local `rest/${storeCode}/...` glue. You should only need to include the route configured in `webapi.xml` in your parameter.
-- use `requestMagentoJson()` for transport concerns only, not feature-specific business rules
 
 ## Use Declarative Runtime Elements Where They Fit
 

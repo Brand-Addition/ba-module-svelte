@@ -1,11 +1,19 @@
 import { requestJson } from '../http.js';
 import { url as buildMagentoUrl } from '../url.js';
-import {
-    CUSTOMER_SECTIONS_UPDATED_EVENT,
-    dispatchStorefrontEvent,
-} from '../events/storefront.js';
+
+export const CUSTOMER_SECTIONS_UPDATED_EVENT = 'svelte:customer-sections-updated';
 
 const STORAGE_KEY = 'mage-cache-storage';
+
+function dispatchStorefrontEvent(target, eventName, detail) {
+    if (typeof target === 'undefined' || typeof target.dispatchEvent !== 'function') {
+        return;
+    }
+
+    target.dispatchEvent(new CustomEvent(eventName, {
+        detail,
+    }));
+}
 
 function createWritableState(initialValue) {
     let value = initialValue;
@@ -309,4 +317,3 @@ export function createCustomerSectionStore(sectionName, options = {}) {
     };
 }
 
-export { CUSTOMER_SECTIONS_UPDATED_EVENT };
