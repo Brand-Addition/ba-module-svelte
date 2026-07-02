@@ -16,7 +16,12 @@ function normalizeMessage(type, text) {
 
 export function dispatchStorefrontMessage(type, text) {
     const message = normalizeMessage(type, text);
-    console.log('dispatchStorefrontMessage', message);
+
+    if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') {
+        console.warn('window.dispatchEvent is not available - Unable to send customer message.');
+        return;
+    }
+
     window.dispatchEvent(new CustomEvent('svelte:message', {
         detail: message
     }));
