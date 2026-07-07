@@ -49,7 +49,7 @@ All pieces:
 - `view/frontend/web/js/lib/magento.js`
   **BETA** Public Magento URL and JSON request helper facade.
 - `view/frontend/web/js/lib/state.js`
-  **ALPHA** Public customer-section and store hydration facade.
+  **BETA** Public customer-section and store hydration facade.
 - `view/frontend/web/js/lib/forms.js`
   **ALPHA** Public validation and AJAX form facade.
 - `view/frontend/web/js/lib/commerce.js`
@@ -540,35 +540,102 @@ Todo:
 
 ### State
 
-Status: very alpha. Expect change.
+Status: beta. Expect change.
 
-```js
-import {
-    createCustomerSectionStore,
-    getCachedCustomerSection,
-    loadCustomerSection,
-    loadCustomerSections,
-    reloadCustomerSection,
-    reloadCustomerSections,
-    syncCustomerSectionsCache,
-} from '@modules/BA_Svelte/js/lib/state.js';
+```ts
+import { customerSections } from '$lib/state';
 ```
 
 Use `state.js` for:
 
 - customer sections
-- cache-first reads from `mage-cache-storage`
-- forced reloads through `customer/section/load`
-- shared section store patterns
 
-Rules:
 
-- use `loadCustomerSection()` for normal hydration
-- use `reloadCustomerSection()` when you want cache bypass
-- use `createCustomerSectionStore()` when a feature wants one reusable store contract
-- if you update section payloads locally, persist them with `syncCustomerSectionsCache()`
+#### Get a Section
 
-It emits a browser event when customer sections are updated and can be mirrored into Magento customer-data through the accompanying mixin in [view/frontend/web/js/magento-mixin/customer-sections.js](view/frontend/web/js/magento-mixin/customer-sections.js).
+```ts
+const customer = customerSections.get('customer');
+```
+
+#### Get Multiple Sections
+
+```ts
+const sections = customerSections.getMany([
+    'customer',
+    'cart',
+]);
+```
+
+#### Load Sections
+
+```ts
+await customerSections.load([
+    'customer',
+    'cart',
+]);
+```
+
+#### Force Reload
+
+```ts
+await customerSections.reload(
+    'customer',
+    'cart',
+);
+```
+
+#### Update a Section
+
+```ts
+customerSections.set('customer', {
+    firstname: 'Sam',
+});
+```
+
+#### Subscribe to Changes
+
+```ts
+const unsubscribe = customerSections.subscribe(
+    'cart',
+    (_, cart) => {
+        console.log(cart);
+    }
+);
+```
+
+Cleanup:
+
+```ts
+unsubscribe();
+```
+
+#### Svelte 5 Example
+
+```ts
+let customer = $state(
+    customerSections.get('customer')
+);
+
+$effect(() => {
+    return customerSections.subscribe(
+        'customer',
+        (_, data) => {
+            customer = data;
+        }
+    );
+});
+```
+
+#### Recommended Usage
+
+Use the shared singleton:
+
+```ts
+import { customerSections } from '$lib/state';
+```
+
+Only instantiate `CustomerSections` directly when testing or creating isolated instances.
+
 
 ### Forms
 

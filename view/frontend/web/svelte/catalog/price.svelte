@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { _ } from "@modules/BA_Svelte/js/lib/i18n.js";
+    import { _ } from "../../js/lib/i18n.js";
 
     type AmountValue = number | string | null | undefined;
 

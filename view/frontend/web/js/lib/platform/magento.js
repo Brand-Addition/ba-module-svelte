@@ -166,6 +166,9 @@ export function buildRestUrl(path = '', options = {}) {
     return buildStorefrontUrl(`rest/${storeCode}/${normalizedPath}`);
 }
 
+/**
+ * Essentially a wrapper around fetch.
+ */
 export async function requestMagentoJson(url, options = {}) {
     const {
         body = null,
