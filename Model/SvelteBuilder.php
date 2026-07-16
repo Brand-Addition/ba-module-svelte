@@ -180,7 +180,7 @@ class SvelteBuilder
 
     private function ensureNodeModules(
         string $svelteSourcePath,
-        \Symfony\Component\Console\Output\OutputInterface $output,
+        ?\Symfony\Component\Console\Output\OutputInterface $output = null,
     ): void
     {
         if ($this->hasBuildDependencies($svelteSourcePath)) {

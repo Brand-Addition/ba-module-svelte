@@ -18,11 +18,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class BuildSveltePlugin
 {
-    private const MODULE_NAME = 'BA_Svelte';
-    private const RELATIVE_SVELTE_PATH = 'view/frontend/web/svelte-src';
-
-    private bool $buildAttempted = false;
-
     public function __construct(
         private readonly \BA\Svelte\Model\SvelteBuilder $svelteBuilder
     ) {
