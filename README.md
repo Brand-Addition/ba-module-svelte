@@ -30,9 +30,9 @@ Simply, can be condensed to:
 - `view/frontend/web/svelte-src`
   Shared Vite source used to build the runtime bundle against the deployed static-content tree.
 
-To build your svelte interface, and run `bin/magento setup:static-content:deploy -f --jobs=20 --area=frontend` to show on frontend. No need to rm -rf generated or preprocessed folders.
+To build your svelte interface, and run `bin/magento setup:static-content:deploy -f --jobs=20 --area=frontend` to show on frontend.
 
-All pieces:
+After that, you can run `bin/magento ba:svelte:watch` while developing to automatically rebuild your svelte bundle on file changes.
 
 - `BA\Svelte\Block\SvelteBlock`
   Any svelte block on frontend. Can be root or child components.
@@ -54,8 +54,6 @@ All pieces:
   **ALPHA** Public validation and AJAX form facade.
 - `view/frontend/web/js/lib/commerce.js`
   **TODO** Public add-to-cart facade.
-- `BuildSveltePlugin`
-  Hooks into `setup:static-content:deploy` and builds the merged storefront Svelte bundle in each deployed static-content root that contains `BA_Svelte`.
 
 ## Start A New Root Mount
 
@@ -398,8 +396,9 @@ pub/static/<area>/<Vendor>/<Theme>/<Locale>/BA_Svelte/svelte/container-renderer.
 Why this matters:
 
 - imports stay short
-- one BA module can reuse public code from another BA module
+- one module can reuse public code from another module
 - the build runs against the same merged static asset tree Magento serves
+- Theme overrides are respected
 
 Rules:
 
@@ -764,6 +763,8 @@ Exit criteria for a migrated popup:
 1. Run `bin/magento setup:static-content:deploy`
 2. `BA_Svelte` detects deployed storefront roots containing BA_Svelte assets
 3. For each deployed root, it runs `npm run build` inside `view/frontend/web/svelte-src`
+
+*Remember the watch command for development: `bin/magento ba:svelte:watch`*
 
 ### Manual Build
 
