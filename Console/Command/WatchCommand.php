@@ -7,6 +7,7 @@ namespace BA\Svelte\Console\Command;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Exception\LocalizedException;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -18,6 +19,8 @@ class WatchCommand extends Command
         'svelte',
     ];
     private const DEBOUNCE_SECONDS = 0.5;
+
+    private bool $outputAll = false;
 
     public function __construct(
         private readonly \BA\Svelte\Model\SvelteBuilder $svelteBuilder,
@@ -31,6 +34,28 @@ class WatchCommand extends Command
         $this->setName('ba:svelte:watch');
         $this->setDescription(
             'Watches file changes in app/code and app/design and recompiles Svelte bundles.'
+        );
+
+        $this->addOption(
+            name: 'theme',
+            shortcut: 't',
+            mode: InputOption::VALUE_OPTIONAL,
+            description: 'Theme to watch (e.g. Magento/luma)',
+            default: 'all'
+        );
+
+        $this->addOption(
+            name: 'locale',
+            shortcut: 'l',
+            mode: InputOption::VALUE_OPTIONAL,
+            description: 'Locale to watch (e.g. en_US)',
+            default: 'all'
+        );
+
+        $this->addOption(
+            name: 'output-all',
+            mode: InputOption::VALUE_NONE,
+            description: 'Show all output from the shell commands'
         );
 
         parent::configure();
@@ -47,20 +72,28 @@ class WatchCommand extends Command
         // if not, delete files in those directories to create symlinks
         // 4. re-run svelte build and show all output to console.
         // goto 2.
+        $theme = (string) $input->getOption('theme');
+        $locale = (string) $input->getOption('locale');
+        $this->outputAll = (bool) $input->getOption('output-all');
+        $this->svelteBuilder->configure(
+            buildAttempted: false,
+            showAllOutput: $this->outputAll
+        );
+
         try {
             $scdRoots = $this->svelteBuilder->getScdRoots(
                 areas: ['frontend'],
                 excludedAreas: [],
-                themes: ['all'],
+                themes: [$theme],
                 excludedThemes: [],
-                languages: ['all'],
+                languages: [$locale],
                 excludedLanguages: []
             );
 
             if ($scdRoots === []) {
                 throw new LocalizedException(
                     __(
-                        'No deployed frontend static content was found. Run setup:static-content:deploy first.'
+                        'No deployed frontend static content was found. Either your specified theme wasnt found or you need to run setup:static-content:deploy first.'
                     )
                 );
             }
@@ -93,6 +126,13 @@ class WatchCommand extends Command
                 sprintf(
                     '<error>%s</error>',
                     $e->getMessage()
+                )
+            );
+
+            $output->writeln(
+                sprintf(
+                    '<comment>%s</comment>',
+                    $e->getTraceAsString()
                 )
             );
 
@@ -245,7 +285,8 @@ class WatchCommand extends Command
         }
 
         $this->svelteBuilder->configure(
-            buildAttempted: false
+            buildAttempted: false,
+            showAllOutput: $this->outputAll
         );
 
         $this->svelteBuilder->buildSvelteAssets(
@@ -401,6 +442,9 @@ class WatchCommand extends Command
         }
     }
 
+    /**
+     * @return string[]
+     */
     private function getWatchRoots(): array
     {
         $roots = [];

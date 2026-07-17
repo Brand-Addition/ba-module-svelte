@@ -98,11 +98,32 @@ class FrontendAssetSync
 
     private function copyFile(SplFileInfo $item, string $destination): void
     {
+        if (is_link($destination)) {
+            return;
+        }
+
         if (!copy($item->getPathname(), $destination)) {
+            $reason = match (true) {
+                !file_exists($item->getPathname()) =>
+                    'Source file does not exist.',
+                !is_readable($item->getPathname()) =>
+                    'Source file is not readable.',
+                !is_dir(dirname($destination)) =>
+                    'Destination directory does not exist.',
+                !is_writable(dirname($destination)) =>
+                    'Destination directory is not writable.',
+                default =>
+                    'The filesystem rejected the copy operation for an unknown reason.',
+            };
+
             throw new LocalizedException(
                 new Phrase(
-                    'Unable to copy static asset from %1 to %2',
-                    [$item->getPathname(), $destination]
+                    'Unable to copy static asset from %1 to %2. %3',
+                    [
+                        $item->getPathname(),
+                        $destination,
+                        $reason,
+                    ]
                 )
             );
         }

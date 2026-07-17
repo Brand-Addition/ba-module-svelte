@@ -9,6 +9,7 @@ class SvelteBuilder
     private const RELATIVE_SVELTE_PATH = 'view/frontend/web/svelte-src';
 
     private bool $buildAttempted = false;
+    private bool $showAllOutput = false;
 
     public function __construct(
         private readonly \Magento\Framework\Component\ComponentRegistrarInterface $componentRegistrar,
@@ -20,15 +21,20 @@ class SvelteBuilder
 
     public function configure(
         bool $buildAttempted = false,
+        bool $showAllOutput = false,
     ): void
     {
         $this->buildAttempted = $buildAttempted;
+        $this->showAllOutput = $showAllOutput;
     }
 
     /**
      * @param array<int, string> $scdRoots
      */
-    public function buildSvelteAssets(array $scdRoots, ?\Symfony\Component\Console\Output\OutputInterface $output = null): void
+    public function buildSvelteAssets(
+        array $scdRoots,
+        ?\Symfony\Component\Console\Output\OutputInterface $output = null
+    ): void
     {
         if ($this->buildAttempted) {
             return;
@@ -57,13 +63,16 @@ class SvelteBuilder
         foreach ($scdRoots as $scdRoot) {
             $this->frontendAssetSync->sync($scdRoot);
             $this->outputOrLog($output, sprintf('BA Svelte: Building bundle for %s', $scdRoot));
-            $this->runShellCommand(
+            $shellOutput = $this->runShellCommand(
                 label: 'npm run build',
                 command: 'cd %s && env SCD_ROOT=%s npm run build',
                 arguments: [$svelteSourcePath, $scdRoot],
                 svelteSourcePath: $svelteSourcePath,
                 scdRoot: $scdRoot
             );
+            if ($this->showAllOutput) {
+                $this->outputOrLog($output, $shellOutput);
+            }
         }
     }
 
@@ -122,7 +131,74 @@ class SvelteBuilder
         }
 
         if ($roots === []) {
-            return [];
+
+            $availableThemes = [];
+                $availableLocales = [];
+
+                foreach (
+                    glob(
+                        $staticViewPath
+                        . DIRECTORY_SEPARATOR
+                        . '*'
+                        . DIRECTORY_SEPARATOR
+                        . '*'
+                        . DIRECTORY_SEPARATOR
+                        . '*'
+                        . DIRECTORY_SEPARATOR
+                        . '*'
+                    ) ?: [] as $path
+                ) {
+                    if (!is_dir($path)) {
+                        continue;
+                    }
+
+                    $relativePath = substr(
+                        $path,
+                        strlen($staticViewPath . DIRECTORY_SEPARATOR)
+                    );
+
+                    $segments = explode(
+                        DIRECTORY_SEPARATOR,
+                        $relativePath
+                    );
+
+                    if (count($segments) < 4) {
+                        continue;
+                    }
+
+                    $availableThemes[] =
+                        $segments[1]
+                        . '/'
+                        . $segments[2];
+
+                    $availableLocales[] =
+                        $segments[3];
+                }
+
+                $availableThemes = array_values(
+                    array_unique($availableThemes)
+                );
+
+                $availableLocales = array_values(
+                    array_unique($availableLocales)
+                );
+
+                sort($availableThemes);
+                sort($availableLocales);
+
+                throw new \Magento\Framework\Exception\LocalizedException(
+                    __(
+                        'No matching SCD roots found. Areas: "%1". Themes: "%2". Locales: "%3". Available themes: "%4". Available locales: "%5".',
+                        [
+                            implode(', ', $areas),
+                            implode(', ', $themes),
+                            implode(', ', $languages),
+                            implode(', ', ["all", ...$availableThemes]),
+                            implode(', ', ["all", ...$availableLocales]),
+                        ]
+                    )
+                );
+
         }
 
         $roots = array_values(array_filter(
@@ -189,22 +265,28 @@ class SvelteBuilder
 
         if (is_file($svelteSourcePath . DIRECTORY_SEPARATOR . 'package-lock.json')) {
             $this->outputOrLog($output, 'BA Svelte: Installing dependencies with npm ci...');
-            $this->runShellCommand(
+            $shellOutput = $this->runShellCommand(
                 label: 'npm ci',
                 command: 'cd %s && npm ci',
                 arguments: [$svelteSourcePath],
                 svelteSourcePath: $svelteSourcePath
             );
+            if ($this->showAllOutput) {
+                $this->outputOrLog($output, $shellOutput);
+            }
             return;
         }
 
         $this->outputOrLog($output, 'BA Svelte: Installing dependencies with npm install...');
-        $this->runShellCommand(
+        $shellOutput = $this->runShellCommand(
             label: 'npm install',
             command: 'cd %s && npm install',
             arguments: [$svelteSourcePath],
             svelteSourcePath: $svelteSourcePath
         );
+        if ($this->showAllOutput) {
+            $this->outputOrLog($output, $shellOutput);
+        }
     }
 
     private function hasBuildDependencies(string $svelteSourcePath): bool
