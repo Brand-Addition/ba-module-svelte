@@ -21,3 +21,9 @@ export function dispatchStorefrontMessage(type, text) {
         detail: message
     }));
 }
+
+export function clearStorefrontMessages() {
+    window.dispatchEvent(
+        new CustomEvent('svelte:messages:clear')
+    );
+}
