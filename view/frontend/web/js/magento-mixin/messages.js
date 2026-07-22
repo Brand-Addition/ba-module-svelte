@@ -33,6 +33,12 @@ define([
                     customerData.set('messages', messages);
                 });
 
+                window.addEventListener('svelte:messages:clear', () => {
+                    customerData.set('messages', {
+                        messages: []
+                    });
+                });
+
                 return this;
             }
         });
