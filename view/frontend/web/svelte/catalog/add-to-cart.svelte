@@ -13,7 +13,7 @@
 
       let {
           service,
-          className = '',
+          className = 'action primary',
           label = _('Add to Cart'),
           disabled = false
       }: Props = $props();
