@@ -635,6 +635,41 @@ import { customerSections } from '$lib/state';
 
 Only instantiate `CustomerSections` directly when testing or creating isolated instances.
 
+### GraphQL
+
+GraphQL queries can be posted using inbuilt tools.
+
+First, define your query in your module's /js/graphql/queries folder. The formatting needs to follow the below example: 
+```js
+import { formatArgs } from '@modules/BA_Svelte/js/lib/graphql/tools/formatArgs.ts';
+
+export function activateWishlist(params: { wishlistId: string | number }) {
+    const args = formatArgs({
+        wishlistId: params?.wishlistId
+    });
+    
+    return {
+        type: 'mutation' as const,
+        structure: [
+            {
+                [`activate_wishlist${args}`]: [
+                    'status'
+                ]
+            }
+        ]
+    };
+}
+```
+
+Then, import then query sender:
+```js
+import { graphQLPost } from '@modules/BA_Svelte/js/lib/graphql/query-sender.ts';
+```
+You can then post your query, with any arguments that are required for the call: 
+```js
+await graphQLPost('activateWishlist', {'wishlistId': selected.wishlist_id});
+```
+
 
 ### Forms
 
