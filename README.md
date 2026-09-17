@@ -1,38 +1,34 @@
 # BA_Svelte
 
-`BA_Svelte` is the shared Magento 2 Svelte platform for BA storefront modules.
+`BA_Svelte` is a Magento 2 Svelte integration.
 
-In practice a BA storefront module built on `BA_Svelte` usually looks like this:
+A module built on `BA_Svelte` usually looks like this:
 
 1. Layout XML declares a root `SvelteBlock`
-2. That root points at a `.svelte` component in your module
-3. XML arguments, a `view_model`, and `computed_props` become component props
+2. That root template is set to `BA_Svelte::root.phtml`
+3. Most svelte components specificy which `.svelte` component using XML arguments
+3. PHP data comes in through both `view_model` and `computed_props`. They come in as props to the .svelte component.
 4. Optional view xml child blocks/containers become named Svelte slots
-5. The shared runtime mounts the root component on the page
-6. Your Svelte code imports shared BA platform helpers through `@modules`
+6. Svelte code imports through `@modules`
 
 That keeps the authoring model simple:
 
 - normal Magento layout and blocks
 - normal Svelte components
 - no extra registry file
-- no second naming system
-- Magento-native `before`, `after`, `move`, and `remove` still work
+- Magento-native layout functionality like `before`, `after`, `move`, and `remove` still work
 
-## The Main Pieces
+**Careful relying only on `view_model` and `computed_props` if you have varnish caching on production - those cases should be brought in via a REST or GraphQL API.** [Further reading here.](https://alankent.me/2014/12/09/magento-2-caching-overview/)
 
-Simply, can be condensed to:
+## Installation & running
 
-- `BA\Svelte\Block\SvelteBlock`
-  Any svelte block on frontend. Can be root or child components.
-- `view/frontend/templates/root.phtml`
-  Emits the `.svelte-root` wrapper, serialized config, and optional server fallback markup.
-- `view/frontend/web/svelte-src`
-  Shared Vite source used to build the runtime bundle against the deployed static-content tree.
-
-To build your svelte interface, and run `bin/magento setup:static-content:deploy -f --jobs=20 --area=frontend` to show on frontend.
+1. `composer require brandaddition/module-svelte`
+2. `bin/magento setup:upgrade`
+3. `bin/magento setup:static-content:deploy -f --jobs=20 --area=frontend`
 
 After that, you can run `bin/magento ba:svelte:watch` while developing to automatically rebuild your svelte bundle on file changes.
+
+## The Main Pieces
 
 - `BA\Svelte\Block\SvelteBlock`
   Any svelte block on frontend. Can be root or child components.
@@ -106,7 +102,7 @@ The matching root component can then read normal props plus the container helper
 </section>
 ```
 
-## Add Magento-Native Extension Points
+## Extension Points
 
 Obviously, as its just view xml, a second module can extend the xml we added above:
 
@@ -192,7 +188,7 @@ This is root-mount behavior only. It is not a Svelte hydration contract and it d
 
 ## Quick render using the viewmodel
 
-Sometimes you may need to render a svelte block without using the svelte block class. If you bring in `BA\Svelte\ViewModel\SvelteBlockRenderer` as a viewmodel, you can call `render()`. This wont include child components, but will in future.
+Sometimes you may need to render a svelte block without using the svelte block class. If you bring in `BA\Svelte\ViewModel\SvelteBlockRenderer` as a viewmodel, you can call `render()`. This wont include child components, but may in the future.
 
 ## Use A Svelte Mount In Sorted Link Collections
 
@@ -428,13 +424,32 @@ Example:
 <script>
     import { _ } from '@modules/BA_Svelte/js/lib/i18n.js';
 
+    let { buttonLabel = _('Open size guide') } = $props();
+</script>
+
+<button type="button">
+    {buttonLabel}
+</button>
+```
+
+<details><summary>Quick note on the translation.</summary>
+    It reads most files in the view folder, regexing for translation tags. Because of this it defines a cache type using `cache.xml` and there are restrictions to the translation.
+
+Consider the code snippet below. The prop must come in already translated, as BA_Svelte won't know what text needs translating. Also, the `_()` has moved to be a variable rather than a string, so this may too struggle.
+```svelte
+<script>
+    import { _ } from '@modules/BA_Svelte/js/lib/i18n.js';
+
     let { buttonLabel = 'Open size guide' } = $props();
 </script>
 
 <button type="button">
     {_(buttonLabel)}
 </button>
+
+If you have any better ideas on how to get the translations to work, please open an issue or a PR.
 ```
+</details>
 
 ### Price Rendering
 
@@ -453,21 +468,22 @@ This component handles:
 - optional minimal-price links back to the product URL
 
 Props:
-
-`final_price`, **REQUIRED**
-`regular_price`, default = `0,`
-`has_special_price`, default = `false,`
-`currency_code`, default = `window.__baCurrentCurrency,`
-`currency_symbol`, default = `'',`
-`locale`, default = `window.__baCurrentLocale,`
-`precision`, default = `2,`
-`show_minimal_price`, default = `false,`
-`use_link_for_as_low_as`, default = `false,`
-`minimal_price`, default = `null,`
-`minimal_price_label`, default = `_('As low as'),`
-`product_url`, default = `'',`
-`special_price_label`, default = `_('Special Price'),`
-`old_price_label`, default = `_('Was'),`
+```
+final_price => **REQUIRED**
+regular_price => default = `0,`
+has_special_price => default = `false,`
+currency_code => default = `window.__baCurrentCurrency,`
+currency_symbol => default = `'',`
+locale => default = `window.__baCurrentLocale,`
+precision => default = `2,`
+show_minimal_price => default = `false,`
+use_link_for_as_low_as => default = `false,`
+minimal_price => default = `null,`
+minimal_price_label => default = `_('As low as'),`
+product_url => default = `'',`
+special_price_label => default = `_('Special Price'),`
+old_price_label => default = `_('Was'),`
+```
 
 Example:
 
@@ -511,6 +527,43 @@ dispatchStorefrontMessage(STORE_MESSAGE_TYPES.error, _('Please enter a valid ema
 dispatchStorefrontMessage(STORE_MESSAGE_TYPES.success, _('Quote shared'));
 ```
 
+### GraphQL
+
+GraphQL queries can be posted using inbuilt tools.
+
+First, define your query in your module's /js/graphql/queries folder. The formatting needs to follow the below example: 
+```js
+import { formatArgs } from '@modules/BA_Svelte/js/lib/graphql/tools/formatArgs.ts';
+
+export function activateWishlist(params: { wishlistId: string | number }) {
+    const args = formatArgs({
+        wishlistId: params?.wishlistId
+    });
+    
+    return {
+        type: 'mutation' as const,
+        structure: [
+            {
+                [`activate_wishlist${args}`]: [
+                    'status'
+                ]
+            }
+        ]
+    };
+}
+```
+
+Then, import then query sender:
+```js
+import { graphQLPost } from '@modules/BA_Svelte/js/lib/graphql/query-sender.ts';
+```
+You can then post your query, with any arguments that are required for the call: 
+```js
+await graphQLPost('activateWishlist', {'wishlistId': selected.wishlist_id});
+```
+
+
+
 ### Magento Utilities
 
 ```js
@@ -532,10 +585,6 @@ Rules:
 - prefer server-resolved URLs via props when the route is already known during render
 - use `buildRestUrl()` instead of feature-local `rest/${storeCode}/...` glue. You should only need to include the route configured in `webapi.xml` in your parameter.
 - use `requestMagentoJson()` for transport concerns only, not feature-specific business rules
-
-Todo:
-
-- GraphQL helpers
 
 ### State
 
@@ -635,41 +684,6 @@ import { customerSections } from '$lib/state';
 
 Only instantiate `CustomerSections` directly when testing or creating isolated instances.
 
-### GraphQL
-
-GraphQL queries can be posted using inbuilt tools.
-
-First, define your query in your module's /js/graphql/queries folder. The formatting needs to follow the below example: 
-```js
-import { formatArgs } from '@modules/BA_Svelte/js/lib/graphql/tools/formatArgs.ts';
-
-export function activateWishlist(params: { wishlistId: string | number }) {
-    const args = formatArgs({
-        wishlistId: params?.wishlistId
-    });
-    
-    return {
-        type: 'mutation' as const,
-        structure: [
-            {
-                [`activate_wishlist${args}`]: [
-                    'status'
-                ]
-            }
-        ]
-    };
-}
-```
-
-Then, import then query sender:
-```js
-import { graphQLPost } from '@modules/BA_Svelte/js/lib/graphql/query-sender.ts';
-```
-You can then post your query, with any arguments that are required for the call: 
-```js
-await graphQLPost('activateWishlist', {'wishlistId': selected.wishlist_id});
-```
-
 
 ### Forms
 
@@ -710,8 +724,6 @@ The runtime bootstrap itself is internal, but these markup contracts are public:
 - `<ba-collapsible>`
 - `<ba-accordion>`
 - `<ba-modal>`
-- `<ba-add-to-cart>`
-- `<ba-quantity-switch>`
 
 Example modal:
 
@@ -721,21 +733,6 @@ Example modal:
     <button type="button" data-ba-modal-close>Close</button>
 </ba-modal>
 ```
-
-Example add-to-cart wrapper:
-
-```html
-<ba-add-to-cart>
-    <form data-role="tocart-form" action="/checkout/cart/add" method="post">
-        ...
-        <button type="submit" class="action tocart primary">
-            <span>Add to Cart</span>
-        </button>
-    </form>
-</ba-add-to-cart>
-```
-
-`<ba-quantity-switch>` is also a public contract. Its controller lives behind the runtime, so feature modules should use the element instead of importing quantity-switch internals.
 
 ## Replace Magento JS With BA_Svelte Contracts
 
