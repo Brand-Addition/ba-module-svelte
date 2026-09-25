@@ -8,8 +8,8 @@
     "test": "node --test tests/*.test.mjs"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^7.1.2",
-    "svelte": "^5.20.1",
-    "vite": "^8.1.2"
+    "@sveltejs/vite-plugin-svelte": "^7.3",
+    "svelte": "^5.56",
+    "vite": "^8.3"
   }
 }
