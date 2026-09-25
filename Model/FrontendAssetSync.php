@@ -36,6 +36,37 @@ class FrontendAssetSync
         }
     }
 
+    public function removeSvelteSourceFromFrontend(string $scdRoot): void
+    {
+        foreach ($this->registrar->getPaths(ComponentRegistrar::MODULE) as $moduleName => $modulePath) {
+            $targetPath = $scdRoot . DIRECTORY_SEPARATOR . $moduleName;
+            if (is_dir($targetPath.DIRECTORY_SEPARATOR . 'svelte')) {
+                $this->removeDirectory($targetPath . DIRECTORY_SEPARATOR . 'svelte');
+            }
+            if (is_dir($targetPath.DIRECTORY_SEPARATOR . 'svelte-src')) {
+                $this->removeDirectory($targetPath . DIRECTORY_SEPARATOR . 'svelte-src');
+            }
+        }
+    }
+
+    private function removeDirectory(string $directory): void
+    {
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST
+        );
+
+        foreach ($iterator as $item) {
+            if ($item->isDir()) {
+                rmdir($item->getPathname());
+            } else {
+                unlink($item->getPathname());
+            }
+        }
+
+        rmdir($directory);
+    }
+
     private function shouldSyncModuleAssets(string $sourcePath): bool
     {
         if (!is_dir($sourcePath)) {

@@ -16,7 +16,8 @@ class SvelteBuilder
         private readonly \Magento\Framework\App\Filesystem\DirectoryList $directoryList,
         private readonly \Magento\Framework\Shell $shell,
         private readonly \BA\Svelte\Model\FrontendAssetSync $frontendAssetSync,
-        private readonly \Psr\Log\LoggerInterface $logger
+        private readonly \Psr\Log\LoggerInterface $logger,
+        private readonly \Magento\Framework\App\State $appState
     ) {}
 
     public function configure(
@@ -72,6 +73,9 @@ class SvelteBuilder
             );
             if ($this->showAllOutput) {
                 $this->outputOrLog($output, $shellOutput);
+            }
+            if ($this->appState->getMode() === \Magento\Framework\App\State::MODE_PRODUCTION) {
+                $this->frontendAssetSync->removeSvelteSourceFromFrontend($scdRoot);
             }
         }
     }
@@ -267,7 +271,7 @@ class SvelteBuilder
             $this->outputOrLog($output, 'BA Svelte: Installing dependencies with npm ci...');
             $shellOutput = $this->runShellCommand(
                 label: 'npm ci',
-                command: 'cd %s && npm ci',
+                command: 'cd %s && npm ci --ignore-scripts --audit-level=high',
                 arguments: [$svelteSourcePath],
                 svelteSourcePath: $svelteSourcePath
             );
@@ -280,7 +284,7 @@ class SvelteBuilder
         $this->outputOrLog($output, 'BA Svelte: Installing dependencies with npm install...');
         $shellOutput = $this->runShellCommand(
             label: 'npm install',
-            command: 'cd %s && npm install',
+            command: 'cd %s && npm install --ignore-scripts --audit-level=high',
             arguments: [$svelteSourcePath],
             svelteSourcePath: $svelteSourcePath
         );
