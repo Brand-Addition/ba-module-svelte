@@ -16,7 +16,6 @@ function normalizeMessage(type, text) {
 
 export function dispatchStorefrontMessage(type, text) {
     const message = normalizeMessage(type, text);
-    console.log('dispatchStorefrontMessage', message);
     window.dispatchEvent(new CustomEvent('svelte:message', {
         detail: message
     }));

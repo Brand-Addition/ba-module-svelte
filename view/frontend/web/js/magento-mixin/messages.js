@@ -9,7 +9,6 @@ define([
                 this._super();
 
                 window.addEventListener('svelte:message', (event) => {
-                    console.log('svelte:message event received', event);
                     const { type, text } = event.detail || {};
 
                     if (!type || !text) {
@@ -28,7 +27,6 @@ define([
                         text: text
                     });
 
-                    console.log('Updating messages', messages);
                     customerData.set('messages', messages);
                 });
 

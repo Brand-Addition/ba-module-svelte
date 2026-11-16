@@ -18,10 +18,6 @@ export async function graphQLPost(request: string, params?: any) {
         const url = '/graphql';
         const graphqlQuery = generateGraphQLQuery(request, params);
 
-        console.log('graphqlQuery:', graphqlQuery);
-
-        console.log('body:', JSON.stringify(graphqlQuery));
-
         const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -40,8 +36,6 @@ export async function graphQLPost(request: string, params?: any) {
                 responseBody.errors[0].message || 'GraphQL Error'
             );
         }
-
-        console.log('dump response data', responseBody.data);
 
         return responseBody.data || {};
     })();
