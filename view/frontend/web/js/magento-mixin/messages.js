@@ -8,7 +8,6 @@ define([
             initialize: function () {
                 this._super();
 
-                console.log('BA_Svelte/js/magento-mixin/messages initialized');
                 window.addEventListener('svelte:message', (event) => {
                     console.log('svelte:message event received', event);
                     const { type, text } = event.detail || {};
