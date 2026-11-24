@@ -37,6 +37,14 @@ class WatchCommand extends Command
         );
 
         $this->addOption(
+            name: 'area',
+            shortcut: 'a',
+            mode: InputOption::VALUE_OPTIONAL,
+            description: 'Which magento area - defaults to frontend',
+            default: 'frontend'
+        );
+
+        $this->addOption(
             name: 'theme',
             shortcut: 't',
             mode: InputOption::VALUE_OPTIONAL,
@@ -72,6 +80,7 @@ class WatchCommand extends Command
         // if not, delete files in those directories to create symlinks
         // 4. re-run svelte build and show all output to console.
         // goto 2.
+        $area = (string) $input->getOption('area');
         $theme = (string) $input->getOption('theme');
         $locale = (string) $input->getOption('locale');
         $this->outputAll = (bool) $input->getOption('output-all');
@@ -82,7 +91,7 @@ class WatchCommand extends Command
 
         try {
             $scdRoots = $this->svelteBuilder->getScdRoots(
-                areas: ['frontend'],
+                areas: [$area],
                 excludedAreas: [],
                 themes: [$theme],
                 excludedThemes: [],

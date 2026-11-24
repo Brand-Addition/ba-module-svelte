@@ -1,5 +1,5 @@
-/view/frontend/web/svelte-src/node_modules/
-/view/frontend/web/dist/
+/view/base/web/svelte-src/node_modules/
+/view/base/web/dist/
 composer.lock
 vendor
 .phpunit.result.cache

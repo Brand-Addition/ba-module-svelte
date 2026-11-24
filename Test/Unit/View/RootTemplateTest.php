@@ -53,7 +53,7 @@ class RootTemplateTest extends TestCase
         };
 
         ob_start();
-        include './view/frontend/templates/root.phtml';
+        include './view/base/templates/root.phtml';
 
         return (string) ob_get_clean();
     }

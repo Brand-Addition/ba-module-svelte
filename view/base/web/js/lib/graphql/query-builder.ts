@@ -1,6 +1,6 @@
 export type GraphQLStructure = Array<
-    | string 
-    | { [key: string]: Array<any> } 
+    | string
+    | { [key: string]: Array<any> }
     | GraphQLStructure[]
 >;
 /**
@@ -18,7 +18,7 @@ function buildFields(fieldsArray: GraphQLStructure): string {
     }).join('\n');
 }
 
-/** Imports all graphql queries that are stored in /view/frontend/web/js/graphql/queries */
+/** Imports all graphql queries that are stored in /view/base/web/js/graphql/queries */
 type QueryFunction = (params?: any) => {
     type: 'query' | 'mutation';
     structure: GraphQLStructure;
@@ -46,7 +46,7 @@ export function generateGraphQLQuery(request: string, params?: any): { query: st
     }
 
     const { type, structure } = registryFn(params);
-    
+
     const formattedFields = buildFields(structure);
     const indentedFields = formattedFields.split('\n').map(line => '    ' + line).join('\n');
 

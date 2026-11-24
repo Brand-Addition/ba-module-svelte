@@ -77,13 +77,13 @@ class FrontendAssetSync
             || is_dir($sourcePath . DIRECTORY_SEPARATOR . 'svelte-src');
     }
 
-    private function buildFrontendAssetPath(string $modulePath): string
+    private function buildFrontendAssetPath(string $modulePath, string $area): string
     {
         return $modulePath
             . DIRECTORY_SEPARATOR
             . 'view'
             . DIRECTORY_SEPARATOR
-            . 'frontend'
+            . $area
             . DIRECTORY_SEPARATOR
             . 'web';
     }

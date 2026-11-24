@@ -6,6 +6,7 @@ namespace BA\Svelte\Model;
 
 use BA\Svelte\Model\Cache\Type\Translations;
 use FilesystemIterator;
+use Magento\Framework\App\Area\State;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Locale\ResolverInterface;
 use Magento\Framework\Serialize\Serializer\Json;
@@ -46,7 +47,8 @@ class SvelteTranslationsProvider
         private readonly DesignInterface $design,
         private readonly ResolverInterface $localeResolver,
         private readonly Json $serializer,
-        private readonly StoreManagerInterface $storeManager
+        private readonly StoreManagerInterface $storeManager,
+        private readonly State $state,
     ) {
     }
 
@@ -237,9 +239,15 @@ class SvelteTranslationsProvider
             return null;
         }
 
+        try {
+            $area = $this->state->getAreaCode();
+        } catch (\Throwable) {
+            $area = self::FRONTEND_AREA
+        }
+
         $storefrontRoot = $this->directoryList->getPath(DirectoryList::STATIC_VIEW)
             . DIRECTORY_SEPARATOR
-            . self::FRONTEND_AREA
+            . $area
             . DIRECTORY_SEPARATOR
             . str_replace('/', DIRECTORY_SEPARATOR, $themePath)
             . DIRECTORY_SEPARATOR

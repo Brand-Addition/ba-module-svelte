@@ -6,7 +6,7 @@ namespace BA\Svelte\Model;
 class SvelteBuilder
 {
     private const MODULE_NAME = 'BA_Svelte';
-    private const RELATIVE_SVELTE_PATH = 'view/frontend/web/svelte-src';
+    private const RELATIVE_SVELTE_PATH = 'view/base/web/svelte-src';
 
     private bool $buildAttempted = false;
     private bool $showAllOutput = false;
@@ -54,7 +54,7 @@ class SvelteBuilder
         }
 
         if ($scdRoots === []) {
-            $this->outputOrLog($output, 'BA Svelte: Skipping build (no deployed frontend packages found).');
+            $this->outputOrLog($output, 'BA Svelte: Skipping build (no deployed base packages found).');
             return;
         }
 

@@ -12,8 +12,8 @@ matches="$(
         --glob '*.js' \
         --glob '*.mjs' \
         --glob '*.svelte' \
-        --glob '!BA/Svelte/view/frontend/web/js/lib/**' \
-        --glob '!BA/Svelte/view/frontend/web/svelte-src/**' \
+        --glob '!BA/Svelte/view/base/web/js/lib/**' \
+        --glob '!BA/Svelte/view/base/web/svelte-src/**' \
         '@modules/BA_Svelte/js/lib/runtime(\.js|/)' \
         . || true
 )"
