@@ -6,7 +6,7 @@ namespace BA\Svelte\Model;
 
 use BA\Svelte\Model\Cache\Type\Translations;
 use FilesystemIterator;
-use Magento\Framework\App\Area\State;
+use Magento\Framework\App\State;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Locale\ResolverInterface;
 use Magento\Framework\Serialize\Serializer\Json;
