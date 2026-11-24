@@ -62,7 +62,8 @@ class SvelteBuilder
         $this->ensureNodeModules($svelteSourcePath, $output);
 
         foreach ($scdRoots as $scdRoot) {
-            $this->frontendAssetSync->sync($scdRoot);
+            $area = basename(dirname($scdRoot, 3));
+            $this->frontendAssetSync->sync($scdRoot, $area);
             $this->outputOrLog($output, sprintf('BA Svelte: Building bundle for %s', $scdRoot));
             $shellOutput = $this->runShellCommand(
                 label: 'npm run build',

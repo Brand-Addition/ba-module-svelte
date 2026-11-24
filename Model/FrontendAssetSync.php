@@ -19,20 +19,22 @@ class FrontendAssetSync
     ) {
     }
 
-    public function sync(string $scdRoot): void
+    public function sync(string $scdRoot, string $area): void
     {
         foreach ($this->registrar->getPaths(ComponentRegistrar::MODULE) as $moduleName => $modulePath) {
             if (!is_string($moduleName) || !is_string($modulePath) || $moduleName === '' || $modulePath === '') {
                 continue;
             }
 
-            $sourcePath = $this->buildFrontendAssetPath($modulePath);
-            if (!$this->shouldSyncModuleAssets($sourcePath)) {
-                continue;
-            }
-
             $targetPath = $scdRoot . DIRECTORY_SEPARATOR . $moduleName;
-            $this->copyDirectoryContents($sourcePath, $targetPath);
+            foreach (array_unique(['base', $area]) as $sourceArea) {
+                $sourcePath = $this->buildFrontendAssetPath($modulePath, $sourceArea);
+                if (!$this->shouldSyncModuleAssets($sourcePath)) {
+                    continue;
+                }
+
+                $this->copyDirectoryContents($sourcePath, $targetPath);
+            }
         }
     }
 
