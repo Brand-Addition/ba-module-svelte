@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<view xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:Config/etc/view.xsd">
+    <exclude>
+        <!-- List of resources that should not be bundled when bundling is enabled. -->
+        <item type="directory">Lib::node_modules</item>
+        <item type="directory">BA_Svelte::js/dist</item>
+    </exclude>
+</view>
