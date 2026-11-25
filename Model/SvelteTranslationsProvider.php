@@ -242,7 +242,7 @@ class SvelteTranslationsProvider
         try {
             $area = $this->state->getAreaCode();
         } catch (\Throwable) {
-            $area = self::FRONTEND_AREA
+            $area = self::FRONTEND_AREA;
         }
 
         $storefrontRoot = $this->directoryList->getPath(DirectoryList::STATIC_VIEW)
