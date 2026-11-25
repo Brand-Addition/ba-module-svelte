@@ -28,4 +28,20 @@
             </argument>
         </arguments>
     </type>
+    <virtualType name="BA\Svelte\Model\Config\SvelteConfigReader"
+                 type="Magento\Framework\Config\Reader\Filesystem">
+        <arguments>
+            <argument name="converter" xsi:type="object">BA\Svelte\Model\Config\Converter</argument>
+            <argument name="schemaLocator" xsi:type="object">BA\Svelte\Model\Config\SchemaLocator</argument>
+            <argument name="fileName" xsi:type="string">svelte.xml</argument>
+            <argument name="idAttributes" xsi:type="array">
+                <item name="/config/dependencies/dependency" xsi:type="string">name</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <type name="BA\Svelte\Model\SvelteDependencyConfig">
+        <arguments>
+            <argument name="reader" xsi:type="object">BA\Svelte\Model\Config\SvelteConfigReader</argument>
+        </arguments>
+    </type>
 </config>

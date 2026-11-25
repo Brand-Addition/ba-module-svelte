@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:BA_Svelte:etc/svelte.xsd">
+    <dependencies>
+        <dependency name="@sveltejs/vite-plugin-svelte" spec="^7.3"/>
+        <dependency name="svelte" spec="^5.56"/>
+        <dependency name="vite" spec="^8.3"/>
+    </dependencies>
+</config>

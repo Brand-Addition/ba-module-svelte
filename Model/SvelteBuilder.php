@@ -16,6 +16,8 @@ class SvelteBuilder
         private readonly \Magento\Framework\App\Filesystem\DirectoryList $directoryList,
         private readonly \Magento\Framework\Shell $shell,
         private readonly \BA\Svelte\Model\FrontendAssetSync $frontendAssetSync,
+        private readonly \BA\Svelte\Model\SvelteDependencyConfig $svelteDependencyConfig,
+        private readonly \BA\Svelte\Model\SvelteBuilder\Workspace $buildWorkspace,
         private readonly \Psr\Log\LoggerInterface $logger,
         private readonly \Magento\Framework\App\State $appState
     ) {}
@@ -58,25 +60,57 @@ class SvelteBuilder
             return;
         }
 
-        $this->assertNpmIsAvailable();
-        $this->ensureNodeModules($svelteSourcePath, $output);
-
+        $rootsByArea = [];
         foreach ($scdRoots as $scdRoot) {
             $area = basename(dirname($scdRoot, 3));
-            $this->frontendAssetSync->sync($scdRoot, $area);
-            $this->outputOrLog($output, sprintf('BA Svelte: Building bundle for %s', $scdRoot));
-            $shellOutput = $this->runShellCommand(
-                label: 'npm run build',
-                command: 'cd %s && env SCD_ROOT=%s npm run build',
-                arguments: [$svelteSourcePath, $scdRoot],
-                svelteSourcePath: $svelteSourcePath,
-                scdRoot: $scdRoot
-            );
-            if ($this->showAllOutput) {
-                $this->outputOrLog($output, $shellOutput);
+            $rootsByArea[$area][] = $scdRoot;
+        }
+
+        $this->assertNpmIsAvailable();
+
+        $workspaces = [];
+        try {
+            foreach ($rootsByArea as $area => $areaRoots) {
+                $buildPath = $svelteSourcePath;
+                $dependencies = $this->svelteDependencyConfig->getDependencies($area);
+                if ($dependencies !== []) {
+                    $buildPath = $this->buildWorkspace->create($svelteSourcePath, $dependencies);
+                    $workspaces[$buildPath] = $areaRoots;
+                    $this->outputOrLog($output, 'BA Svelte: Installing configured dependencies with npm...');
+                    $shellOutput = $this->runShellCommand(
+                        label: 'npm install',
+                        command: 'cd %s && npm install --ignore-scripts --audit-level=high',
+                        arguments: [$buildPath],
+                        svelteSourcePath: $buildPath
+                    );
+                    if ($this->showAllOutput) {
+                        $this->outputOrLog($output, $shellOutput);
+                    }
+                } else {
+                    $this->ensureNodeModules($buildPath, $output);
+                }
+
+                foreach ($areaRoots as $scdRoot) {
+                    $this->frontendAssetSync->sync($scdRoot, $area);
+                    $this->outputOrLog($output, sprintf('BA Svelte: Building bundle for %s', $scdRoot));
+                    $shellOutput = $this->runShellCommand(
+                        label: 'npm run build',
+                        command: 'cd %s && env SCD_ROOT=%s npm run build',
+                        arguments: [$buildPath, $scdRoot],
+                        svelteSourcePath: $buildPath,
+                        scdRoot: $scdRoot
+                    );
+                    if ($this->showAllOutput) {
+                        $this->outputOrLog($output, $shellOutput);
+                    }
+                    if ($this->appState->getMode() === \Magento\Framework\App\State::MODE_PRODUCTION) {
+                        $this->frontendAssetSync->removeSvelteSourceFromFrontend($scdRoot);
+                    }
+                }
             }
-            if ($this->appState->getMode() === \Magento\Framework\App\State::MODE_PRODUCTION) {
-                $this->frontendAssetSync->removeSvelteSourceFromFrontend($scdRoot);
+        } finally {
+            foreach ($workspaces as $workspacePath => $areaRoots) {
+                $this->buildWorkspace->cleanup($workspacePath, $areaRoots);
             }
         }
     }

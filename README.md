@@ -794,23 +794,25 @@ Exit criteria for a migrated popup:
 
 1. Run `bin/magento setup:static-content:deploy`
 2. `BA_Svelte` detects deployed storefront roots containing BA_Svelte assets
-3. For each deployed root, it runs `npm run build` inside `view/frontend/web/svelte-src`
+3. For each deployed root, it builds from `view/base/web/svelte-src` (using a temporary workspace when XML dependencies apply)
+
+### Adding Build Dependencies
+
+Modules can add npm build dependencies with `etc/svelte.xml`. `BA_Svelte` defines its base build dependencies there. The merged dependencies are added to `devDependencies` in the effective build manifest:
+
+```xml
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:BA_Svelte:etc/svelte.xsd">
+    <dependencies>
+        <dependency name="svelte-dnd-action" spec="^0.9.81"/>
+    </dependencies>
+</config>
+```
+
+Put the same file under an area directory, such as `etc/frontend/svelte.xml`, to add dependencies only to that area. Global and area dependencies are combined, and an area dependency overrides the global spec for the same package name. Configured dependencies are installed in a temporary build workspace, leaving the module's `package.json` and `package-lock.json` unchanged.
 
 *Remember the watch command for development: `bin/magento ba:svelte:watch`*
-
-### Manual Build
-
-```bash
-cd src/app/code/BA/Svelte/view/frontend/web/svelte-src
-npm run build
-```
-
-If you need to point at one deployed storefront root explicitly:
-
-```bash
-cd src/app/code/BA/Svelte/view/frontend/web/svelte-src
-SCD_ROOT=/absolute/path/to/pub/static/<area>/<Vendor>/<Theme>/<Locale> npm run build
-```
 
 ## Notes
 
